@@ -1,0 +1,9 @@
+# Python 
+__pycache__/
+.pyo
+
+# Solidity
+build/
+
+# JavaScript
+node_modules/
