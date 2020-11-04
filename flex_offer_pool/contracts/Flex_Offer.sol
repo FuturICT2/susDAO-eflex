@@ -16,6 +16,7 @@ import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721Burnable.sol"
 // 2) Maybe I should only change the address in the struct
 // 3) If we want ownership to change, then all the participants must give approval to contract before joining
 
+
 contract Flex_Offer is ERC721, ERC721Burnable{
     string public memory_string;
 
@@ -81,10 +82,15 @@ contract Flex_Offer is ERC721, ERC721Burnable{
         return uint256(_flex_offer_id);
     }
 
+    function activate_flex_offer(){
+
+    }
+
     // This function assumes that the bidder address is doing the bidding
     // As long as the bidder bids a higher price than the curr bid,
     // And the flex offer is not expired then the bid ownership is transferred
     // Can be swapped out later
+    // Transfer the money at the point of bidding
     function bid_for_flex_offer(uint256 flex_offer_id, uint bidder_bid, address bidder_address) public returns (string memory) {
         // address bidder_address =  _msgSender();
         uint curr_bid = flex_offers_mapping[flex_offer_id].curr_bid;
