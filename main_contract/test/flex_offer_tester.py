@@ -14,7 +14,7 @@ web3_B.eth.defaultAccount = web3_B.eth.accounts[1]
 
 
 compiled_contract_path = '../build/contracts/Flex_Offer.json'
-deployed_contract_address = '0x312441bBB80B5cA26CBdE5Eb51282c7E4709Ffa2'
+deployed_contract_address = '0x17D1f304CCEFA88bb6B2bb2f4E43Ae4bB6668c2b'
 
 with open(compiled_contract_path) as file:
     contract_json = json.load(file)

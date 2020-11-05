@@ -31,25 +31,22 @@ contract Flex_Offer is ERC721, ERC721Burnable{
 
     mapping (uint256 => flex_offer_data) public flex_offers_mapping;
 
-    event flex_offer_minted (
-        uint256 indexed flex_token_id
-    );
+    mapping (uint256 => uint) pendingReturns;
 
-    event flex_offer_bid_success(
-        uint256 indexed flex_token_id
-    );
+    event flexOfferMinted (uint256 indexed flexTokenId);
 
-    event flex_offer_bid_failed(
-        uint256 indexed flex_token_id
-    );
+    event flexOfferBidSuccess(uint256 indexed flexTokenId, uint256 bidReceipt);
 
+    // event flex_offer_bid_failed(uint256 indexed flexTokenId);
 
-    event flex_offer_burned (
-        uint256 indexed flex_offer_id
-    );
+    event flex_offer_burned (uint256 indexed flex_offer_id);
 
     constructor() ERC721("Flex_Offer","FO") public {
         memory_string = "heyo";
+    }
+
+    function generateBidReceipt(address _address, uint timestamp) internal returns (uint256){
+        return uint256(keccak256(abi.encodePacked(_address, timestamp)));
     }
 
     function create_flex_offer_id ( address _address, uint timestamp ) internal returns (bytes32){
@@ -78,39 +75,52 @@ contract Flex_Offer is ERC721, ERC721Burnable{
         _safeMint(_to,_flex_offer_id);
         _initiate_flex_offer_data(_flex_offer_id, power, duration, start_time, end_time);
         require(_exists(_flex_offer_id), "flex offer does not exist");
-        emit flex_offer_minted(_flex_offer_id);
+        emit flexOfferMinted(_flex_offer_id);
         return uint256(_flex_offer_id);
     }
 
-    // function activate_flex_offer(){
+    function BidForFlexOffer(uint256 flexOfferId) public payable returns (uint256 ){
+        // Current highest bid for the flex offer
+        uint currBid = flex_offers_mapping[flexOfferId].curr_bid;
+        // Require that the bid is within the bid window
+        require(
+            (block.timestamp+900) < flex_offers_mapping[flexOfferId].start_time,
+            "Flex Offer is no longer biddable"
+        );
+        require(
+            msg.value > currBid,
+            "Current bid is higher than your bid"
+        );
+        uint256 bidReceipt = generateBidReceipt( _msgSender(), block.timestamp);
+        pendingReturns[bidReceipt] = msg.value;
+        _transfer(ownerOf(flexOfferId), _msgSender(), flexOfferId);
+        flex_offers_mapping[flexOfferId].curr_bid = msg.value;
+        emit flexOfferBidSuccess(flexOfferId, bidReceipt);
+        return (bidReceipt);
+    }
+    // Allows anyone with a bid receipt to get back their money
+    function withdrawLowerBids(uint256 bidReceipt, uint256 flexOfferId, uint claim) public returns (bool){
+        require(
+            _msgSender() != ownerOf(flexOfferId),
+            "You are the current highest bidder"
+        );
+        require (
+            pendingReturns[bidReceipt] == claim,
+            "receipt and claim amount does not telly"
+        );
+        pendingReturns[bidReceipt] = 0;
+        require(_msgSender().send(claim));
+    }
 
-    // }
-
-    // This function assumes that the bidder address is doing the bidding
-    // As long as the bidder bids a higher price than the curr bid,
-    // And the flex offer is not expired then the bid ownership is transferred
-    // Can be swapped out later
-    // Transfer the money at the point of bidding
-    function bid_for_flex_offer(uint256 flex_offer_id, uint bidder_bid, address bidder_address) public returns (string memory) {
-        // address bidder_address =  _msgSender();
-        uint curr_bid = flex_offers_mapping[flex_offer_id].curr_bid;
-        // Check if expired and burn on expiry
-        // Tokens expire 15 minutes before start of flex period
-        if ((block.timestamp+900) > flex_offers_mapping[flex_offer_id].start_time){
-            return "flex offer expired";
-            // Todo
-            // Add the issuing of coins to original owner
-            // Should be paused and not burnt
-            _burn(flex_offer_id);
-        } else if (curr_bid < bidder_bid){
-            _transfer(ownerOf(flex_offer_id), bidder_address, flex_offer_id);
-            flex_offers_mapping[flex_offer_id].curr_bid = bidder_bid;
-            // flex_offer_owner_success(flex_offer_id);
-            return "Bid Successful";
-        }
-        // flex_offer_owner_failed(flex_offer_id);
-        return "Bid Failed";
-        // Create an event emitter
+    // the activation of the flex offer also burns the flex offer
+    // Need to add the reward mechanism here 
+    function ActivateFlexOffer(uint256 flexOfferId)public{
+        require(_msgSender() == ownerOf(flexOfferId));
+        // can only activate after start time
+        require(block.timestamp > flex_offers_mapping[flexOfferId].start_time);
+        // Must be activated before the end time - duration requirement
+        require(block.timestamp < flex_offers_mapping[flexOfferId].end_time-flex_offers_mapping[flexOfferId].duration);
+        _burn(flexOfferId);
     }
 
 }
