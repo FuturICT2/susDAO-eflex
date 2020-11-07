@@ -41,7 +41,7 @@ contract FlexOffer is ERC721, ERC721Burnable, Ownable{
 
     event flexOfferActivation(uint256 indexed flexOfferId,uint256 flexPointCalc);
 
-    event ethForFlexPoint(address indexed _address, uint ethAmount, uint ethBalance,uint flexPointSupply,uint pointAmount);
+    event ethForFlexPoint(address indexed _address, uint ethAmount, uint pointAmount);
 
     // event flex_offer_bid_failed(uint256 indexed flexTokenId);
 
@@ -158,7 +158,7 @@ contract FlexOffer is ERC721, ERC721Burnable, Ownable{
         uint ethAmount = (pointAmount*ethBalance)/flexPointSupply;
         FP.ClaimFlexPoints (_msgSender(), pointAmount);
         require(_msgSender().send(ethAmount));
-        emit ethForFlexPoint(_msgSender(), ethAmount, ethBalance,flexPointSupply,pointAmount);
+        emit ethForFlexPoint(_msgSender(), ethAmount, pointAmount);
     }
 
 
