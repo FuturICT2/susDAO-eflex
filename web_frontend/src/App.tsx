@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 
 import { Offers } from './features/offers/Offers';
+import { Counter } from './features/counter/Counter';
 import Web3 from 'web3';
 
 const { Header, Content, Sider } = Layout;
@@ -35,6 +36,7 @@ function App() {
         <div className="site-layout-background" style={{ padding: 24, minHeight: 360 }}>
           <Web3Context.Provider value={new Web3(Web3.givenProvider || 'ws://localhost:7545')}>
             <Offers />
+            <Counter />
           </Web3Context.Provider>
         </div>
       </Content>
