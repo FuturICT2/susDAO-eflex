@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 import 'antd/dist/antd.css';
-import { Table, DatePicker, Space ,Button,Input, Col, Row, Select } from 'antd';
+import { Table, DatePicker, Space ,Button,Input, Select } from 'antd';
 import moment from 'moment';
 // import moment from "moment";
 
@@ -18,36 +18,61 @@ function Offers() {
     const dataSource = useSelector(selectDataSource);
     const dispatch = useDispatch();
     const web3 = useContext(Web3Context);
-
-    // useEffect( ()=> {
-    //   const account =  await web3.eth.getAccounts();
-    //   const networkID = await web3.eth.net.getId();
-    //   const flexOffer = new web3.eth.Contract(Flex_Offer.abi,contractData.address);
-    //   console.log(account,networkID,flexOffer);
-    // })
-
-    const [account,setAccount] = useState(null);
-    // web3.eth.getAccounts().then((acc:any)=>console.log(acc));
-    // const {networkId, networkName, providerName } = web3;
-    // console.log(networkId, networkName, providerName);
-    // console.log(web3.eth.getAccounts());
-    const contractData = Flex_Offer.networks[5777];
-    const flexOffer = new web3.eth.Contract(Flex_Offer.abi,contractData.address);
-    console.log(flexOffer,web3.eth.defaultAccount);
-
-    const sendoffer =()=>{
-    const start = 1605006000000;
-    const end = 1605027600000;
-    const power = 10;
-    const duration = 9000000;
-    flexOffer.methods.mint_flex_offer_to(power,duration,start,end).send({from:'0xbDC8b0B5A00b6a82438fcFFBB879d65DAbDCA64e'});
-    }
-    flexOffer.events.flex_offer_minted({fromBlock: 0}, function(error:string, event:any){ console.log(event); });
-
     const [noBlocks, setNoBlocks] = useState(0);
     const [eventSub, setEventSub]  = useState(
         web3.eth.subscribe("newBlockHeaders", (_: any, data: any) => {setNoBlocks(noBlocks+1); console.log(data)})
     );
+
+    const [account, setAccount] = useState([]);
+    const [contract, setContract] = useState([]);
+
+    // function getFlex<K extends keyof typeof Flex_Offer.networks>(position: K) {
+    // return Flex_Offer.networks[position]
+    // }
+    useEffect( ()=> {
+      const init =async()=>{
+        try{
+            const account = await web3.eth.getAccounts();
+            setAccount(account);
+            const networkId = await web3.eth.net.getId();
+            const contractData = Flex_Offer.networks[5777];
+            const flexOffer = new web3.eth.Contract(Flex_Offer.abi,contractData.address);
+            console.log(account);
+            setContract(flexOffer);
+            console.log(flexOffer);
+            await flexOffer.methods.balanceOf(account[0]).call().then((res:number)=>console.log(res));
+            const flex_token_id = await flexOffer.methods.tokenOfOwnerByIndex(account[0],0).call();
+            console.log(flex_token_id);
+            flexOffer.methods.flex_offers_mapping(flex_token_id).call().then((res:any)=>console.log(res));
+            await flexOffer.events.flex_offer_minted({fromBlock: 0}, function(error:string, event:any){ console.log(event); });
+        }catch(error){
+          console.log(error);
+        }
+      }
+      init();
+    },[web3]);
+
+  //   useEffect(() => {
+  //   async function listenMMAccount() {
+  //     window.ethereum.on("accountsChanged", async function() {
+  //       const accounts = await web3.eth.getAccounts();
+  //       setAccount(accounts);
+  //       console.log(accounts);
+  //     });
+  //   }
+  //   listenMMAccount();
+  // }, []);
+    const sendoffer =()=>{
+      if(Object.keys(contract).length>0){
+        const start = 1605006000000;
+        const end = 1605027600000;
+        const power = 10;
+        const duration = 9000000;
+        // console.log(contract);
+        await contract.methods.mint_flex_offer_to(power,duration,start,end).send({from:account});
+      }
+    }
+
     function disabledDate(current:any) {
   // Can not select days before today and today
     return current < moment().startOf('day');
@@ -95,9 +120,10 @@ function Offers() {
         }
     ]
 
+    if (typeof account !== 'undefined' && typeof contract !== 'undefined'){
     return (<div>
       <Space direction="vertical" size={18}>
-      <nav>Block number {noBlocks} </nav>
+      <nav>Welcome: {account}, you are on the block number {noBlocks} </nav>
       <h3>Make a new offer</h3>
       <Space direction="horizontal" size={10}>
       <Input.Group compact>
@@ -123,6 +149,9 @@ function Offers() {
       <Table columns={columns} dataSource={dataSource}  title={() => 'Your current offers'}/>
       </Space>
       </div>);
+    }else{
+      return (<div>Loading...</div>);
+    }
 }
 
 export { Offers };
