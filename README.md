@@ -16,19 +16,11 @@ There are two tokens that are created for the flexwise implementation:
 2. BidForFlexOffer(uint256 flexOfferId)
     * Transact() this function to bid for the flex offer
     * Send ETH together with this function and if the current Bid for the offer is lower than the amount you sent, then the ownership will be transferred to the sender
-    * If bid is successful this function will **emit an event flexOfferBidSuccess(flexOfferId, bidReceipt)**
-        * Take note that this event will contain the **bidReceipt**. The bidReceipt is uniquely generated and is used to verify your withdrawal of your claim if your bid was overbidded 
+    * If bid is successful this function will **emit an event flexOfferBidSuccess(flexOfferId)**
+        * Take note that the previous owner will be reimbursed with their bid automatically.
     * Function will not reject any bids if the flexoffer is less than 15 mins to activation window
 
-3. withdrawLowerBids(uint256 bidReceipt, uint256 flexOfferId, uint claim)
-    * Transact() this function to take back the ETH if your bid was being over bid
-    * Take note. You will need to remember the specific flex offer, the corresponding bidReceipt and how much you bid it for
-    * The function will ensure that these 3 information matches before sending the corresponding eth to the caller of this function
-    * Ensure to keep the above 3 information secret as anyone with the information can collect the eth.
-    * **future implementation**: I will be including a functionality that stores the address of the failed bidder to increase security
-    * Since there is no way for a smart contract to activate itself, it is up to the bidder to listen to the event emits and withdraw their bid
-
-4. ActivateFlexOffer(uint256 flexOfferId)
+3. ActivateFlexOffer(uint256 flexOfferId)
     * Transact() this function to activate the flex offer
     * Only the current owner of the flex offer can call this function
     * This function is only callable with the time window as provided within the token
@@ -37,7 +29,7 @@ There are two tokens that are created for the flexwise implementation:
         * the flexoffer will be burned
         * the event **flexOfferActivation(flexOfferId ,flexPointCalc)** will be emited potentially for the physical machine to lookout for and to start the machine
 
-5. EndTimeActivate(uint256 flexOfferId)
+4. EndTimeActivate(uint256 flexOfferId)
     * This is a fall back function to call the start of the machine if:
         * Flex offer is not sold
         * Flex offer was sold but not activated at all
@@ -45,7 +37,7 @@ There are two tokens that are created for the flexwise implementation:
     * emits an event **flex_offer_burned (flexOfferId)**
     * May be used by machine to signal it has started on default so that the flex offer can be burn on the blockchain
 
-6. ClaimEthWithFlexPoint(uint pointAmount)
+5. ClaimEthWithFlexPoint(uint pointAmount)
     * Use this function to convert current flexpoints in the caller's account into ETH
     * The amount of ETH being given to the caller depends on the fraction of the flexpoints the caller has in relation to the total supply of flexpoints
     * upon calling, the corresponding eth will be reimbursed to the caller and the exchanged flexpoints will be burned
@@ -63,3 +55,21 @@ There are actually 2 contracts deployed for flexwise:
 
 The **Flexpoint contract address** is stored within the **FP** variable within the **FlexOffer** contract. Use this address to make call functions such as checking your personal balance and the current total supply to derive the current eth/flexpoint rate. 
 
+
+
+## deprecated functions
+
+2. BidForFlexOffer(uint256 flexOfferId)
+    * Transact() this function to bid for the flex offer
+    * Send ETH together with this function and if the current Bid for the offer is lower than the amount you sent, then the ownership will be transferred to the sender
+    * If bid is successful this function will **emit an event flexOfferBidSuccess(flexOfferId, bidReceipt)**
+        * Take note that this event will contain the **bidReceipt**. The bidReceipt is uniquely generated and is used to verify your withdrawal of your claim if your bid was overbidded 
+    * Function will not reject any bids if the flexoffer is less than 15 mins to activation window
+
+3. withdrawLowerBids(uint256 bidReceipt, uint256 flexOfferId, uint claim)
+    * Transact() this function to take back the ETH if your bid was being over bid
+    * Take note. You will need to remember the specific flex offer, the corresponding bidReceipt and how much you bid it for
+    * The function will ensure that these 3 information matches before sending the corresponding eth to the caller of this function
+    * Ensure to keep the above 3 information secret as anyone with the information can collect the eth.
+    * **future implementation**: I will be including a functionality that stores the address of the failed bidder to increase security
+    * Since there is no way for a smart contract to activate itself, it is up to the bidder to listen to the event emits and withdraw their bid
