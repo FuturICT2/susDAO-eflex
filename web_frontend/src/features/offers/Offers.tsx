@@ -13,18 +13,21 @@ import {
 import { Web3Context } from '../../App';
 // load smart contract
 import Flex_Offer from '../../artifacts/Flex_Offer.json';
-
+interface iContract {
+  methods: any;
+  events: any;
+}
 function Offers() {
     const dataSource = useSelector(selectDataSource);
     const dispatch = useDispatch();
     const web3 = useContext(Web3Context);
-    const [noBlocks, setNoBlocks] = useState(0);
-    const [eventSub, setEventSub]  = useState(
-        web3.eth.subscribe("newBlockHeaders", (_: any, data: any) => {setNoBlocks(noBlocks+1); console.log(data)})
-    );
+    // const [eventSub, setEventSub]  = useState(
+    //     web3.eth.subscribe("newBlockHeaders", (_: any, data: any) => {setNoBlocks(noBlocks+1); console.log(data)})
+    // );
 
     const [account, setAccount] = useState([]);
-    const [contract, setContract] = useState([]);
+
+    const [contract, setContract] = useState<iContract>();
 
     // function getFlex<K extends keyof typeof Flex_Offer.networks>(position: K) {
     // return Flex_Offer.networks[position]
@@ -33,13 +36,11 @@ function Offers() {
       const init =async()=>{
         try{
             const account = await web3.eth.getAccounts();
-            setAccount(account);
+            setAccount(account[0]);
             const networkId = await web3.eth.net.getId();
             const contractData = Flex_Offer.networks[5777];
-            const flexOffer = new web3.eth.Contract(Flex_Offer.abi,contractData.address);
-            console.log(account);
+            const flexOffer:iContract = new web3.eth.Contract(Flex_Offer.abi,contractData.address);
             setContract(flexOffer);
-            console.log(flexOffer);
             await flexOffer.methods.balanceOf(account[0]).call().then((res:number)=>console.log(res));
             const flex_token_id = await flexOffer.methods.tokenOfOwnerByIndex(account[0],0).call();
             console.log(flex_token_id);
@@ -50,7 +51,7 @@ function Offers() {
         }
       }
       init();
-    },[web3]);
+    },[]);
 
   //   useEffect(() => {
   //   async function listenMMAccount() {
@@ -63,13 +64,13 @@ function Offers() {
   //   listenMMAccount();
   // }, []);
     const sendoffer =()=>{
-      if(Object.keys(contract).length>0){
+      if(typeof contract !=='undefined'){
         const start = 1605006000000;
         const end = 1605027600000;
         const power = 10;
         const duration = 9000000;
-        // console.log(contract);
-        await contract.methods.mint_flex_offer_to(power,duration,start,end).send({from:account});
+        console.log(account,contract);
+        contract.methods.mint_flex_offer_to(power,duration,start,end).send({from:account});
       }
     }
 
@@ -123,7 +124,6 @@ function Offers() {
     if (typeof account !== 'undefined' && typeof contract !== 'undefined'){
     return (<div>
       <Space direction="vertical" size={18}>
-      <nav>Welcome: {account}, you are on the block number {noBlocks} </nav>
       <h3>Make a new offer</h3>
       <Space direction="horizontal" size={10}>
       <Input.Group compact>
