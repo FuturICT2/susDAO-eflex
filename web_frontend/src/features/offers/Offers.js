@@ -12,46 +12,34 @@ import {
 
 import { Web3Context } from '../../App';
 // load smart contract
-import Flex_Offer from '../../artifacts/Flex_Offer.json';
-interface iContract {
-  methods: any;
-  events: any;
-}
+
 function Offers() {
-    const dataSource = useSelector(selectDataSource);
-    const dispatch = useDispatch();
-    const web3 = useContext(Web3Context);
-    // const [eventSub, setEventSub]  = useState(
-    //     web3.eth.subscribe("newBlockHeaders", (_: any, data: any) => {setNoBlocks(noBlocks+1); console.log(data)})
-    // );
+  const dataSource = useSelector(selectDataSource);
+  const dispatch = useDispatch();
+  const {
+    account,
+    contract
+  } = useContext(Web3Context);
+  console.log('in offers');
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await contract.methods.balanceOf(account).call().then((res) => console.log(res));
+        let flex_token_id = await contract.methods.tokenOfOwnerByIndex(account, 0).call();
+        console.log(flex_token_id);
+        contract.methods.flex_offers_mapping(flex_token_id).call().then((res) => console.log(res));
+        await contract.events.flex_offer_minted({
+          fromBlock: 0
+        }, function(error, event) {
+          console.log(event);
+        });
 
-    const [account, setAccount] = useState([]);
-
-    const [contract, setContract] = useState<iContract>();
-
-    // function getFlex<K extends keyof typeof Flex_Offer.networks>(position: K) {
-    // return Flex_Offer.networks[position]
-    // }
-    useEffect( ()=> {
-      const init =async()=>{
-        try{
-            const account = await web3.eth.getAccounts();
-            setAccount(account[0]);
-            const networkId = await web3.eth.net.getId();
-            const contractData = Flex_Offer.networks[5777];
-            const flexOffer:iContract = new web3.eth.Contract(Flex_Offer.abi,contractData.address);
-            setContract(flexOffer);
-            await flexOffer.methods.balanceOf(account[0]).call().then((res:number)=>console.log(res));
-            const flex_token_id = await flexOffer.methods.tokenOfOwnerByIndex(account[0],0).call();
-            console.log(flex_token_id);
-            flexOffer.methods.flex_offers_mapping(flex_token_id).call().then((res:any)=>console.log(res));
-            await flexOffer.events.flex_offer_minted({fromBlock: 0}, function(error:string, event:any){ console.log(event); });
-        }catch(error){
-          console.log(error);
-        }
+      } catch (error) {
+        console.log(error);
       }
-      init();
-    },[]);
+    }
+    init();
+  }, [account, contract]);
 
   //   useEffect(() => {
   //   async function listenMMAccount() {
@@ -64,21 +52,21 @@ function Offers() {
   //   listenMMAccount();
   // }, []);
     const sendoffer =()=>{
-      if(typeof contract !=='undefined'){
+//      if(typeof contract !=='undefined'){
         const start = 1605006000000;
         const end = 1605027600000;
         const power = 10;
         const duration = 9000000;
         console.log(account,contract);
         contract.methods.mint_flex_offer_to(power,duration,start,end).send({from:account});
-      }
+//      }
     }
 
-    function disabledDate(current:any) {
+    function disabledDate(current) {
   // Can not select days before today and today
     return current < moment().startOf('day');
     }
-    function range(start:number, end:number) {
+    function range(start, end) {
       const result = [];
       for (let i = start; i < end; i++) {
         result.push(i);
@@ -110,18 +98,18 @@ function Offers() {
             title: 'Foobar',
             dataIndex: 'amount',
             key: 'amount',
-            render: (amount: Number) => `$ ${amount}`,
+            render: (amount) => `$ ${amount}`,
         },
         {
             title: 'Actions',
             dataIndex: 'key',
             key: 'edit',
             // render: (key: string) => <a onClick={() => dispatch(removeEntry(key))}>Delete</a>
-            render: (key: string) => <a onClick={() => { if(window.confirm('Do you want to abort this offer?')) dispatch(removeEntry(key))  } }>Delete</a>
+            render: (key) => <a onClick={() => { if(window.confirm('Do you want to abort this offer?')) dispatch(removeEntry(key))  } }>Delete</a>
         }
     ]
 
-    if (typeof account !== 'undefined' && typeof contract !== 'undefined'){
+    if (account ){
     return (<div>
       <Space direction="vertical" size={18}>
       <h3>Make a new offer</h3>
