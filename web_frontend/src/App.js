@@ -7,10 +7,10 @@ import { useReducer } from 'react';
 // Ant Design imports
 import 'antd/dist/antd.css';
 import { Layout, Menu } from 'antd';
-/*import {
+import {
   LogoutOutlined,
   LoginOutlined
-} from '@ant-design/icons';*/
+} from '@ant-design/icons';
 const { Header, Content, Sider } = Layout;
 
 function App() {
@@ -20,10 +20,10 @@ function App() {
     <Sider collapsible>
       <img src="eflex.jpg" className="logo" alt="eflex-logo" />
       <Menu theme="dark" defaultSelectedKeys={["1"]} mode="inline">
-        <Menu.Item key="1" /*icon={<LogoutOutlined />}*/>
+        <Menu.Item key="1" icon={<LogoutOutlined />}>
           Bidding
         </Menu.Item>
-<Menu.Item key="2" /*icon={<LoginOutlined />}*/>
+<Menu.Item key="2" icon={<LoginOutlined />}>
           Offering
         </Menu.Item>
       </Menu>
