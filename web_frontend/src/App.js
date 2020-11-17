@@ -2,7 +2,7 @@ import logo from './logo.svg';
 import './App.css';
 
 /* import { Web3Context, Web3Connection } from "./features/Web3State/web3State"; */
-import { useReducer } from 'react';
+import { useReducer, createContext } from 'react';
 
 // Ant Design imports
 import 'antd/dist/antd.css';
@@ -11,7 +11,14 @@ import {
   LogoutOutlined,
   LoginOutlined
 } from '@ant-design/icons';
+
+
+// Local imports
+import { AppHeader } from './features/AppHeader/appHeader';
+
 const { Header, Content, Sider } = Layout;
+
+let Web3Context = createContext(null);
 
 function App() {
 
@@ -23,7 +30,7 @@ function App() {
         <Menu.Item key="1" icon={<LogoutOutlined />}>
           Bidding
         </Menu.Item>
-<Menu.Item key="2" icon={<LoginOutlined />}>
+        <Menu.Item key="2" icon={<LoginOutlined />}>
           Offering
         </Menu.Item>
       </Menu>
@@ -32,6 +39,10 @@ function App() {
       <Header className="site-layout-background" style={{ padding: 0 }} />
       <Content style={{ margin: "0 16px" }}>
         <div className="site-layout-background" style={{ padding: 24, minHeight: 360 }}>
+          <Web3Context.Provider value={[{}, ((action)=>{console.log("Action: ", action)})]}>
+            <AppHeader />
+            <h1>Hello</h1>
+          </Web3Context.Provider>
         </div>
       </Content>
     </Layout>
@@ -39,3 +50,5 @@ function App() {
 }
 
 export default App;
+
+export { Web3Context };
