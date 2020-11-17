@@ -6,27 +6,26 @@ import {
     Tag,
     Button } from 'antd';
 
-import { Web3Context } from '../../App';
+import { Web3Context } from '../web3State/web3State';
 
 import Blockies from 'react-blockies';
-
 
 
 
 function AppHeader() {
     let [web3state, dispatch] = useContext(Web3Context);
 
-    let userAddress = web3state.user?.address || "0xkasjdlkajlkj";
-    let userFlexPoints = web3state.user?.flexPoints || 299;
-    let userFlexOffers = web3state.user?.totalFlexOffers || 31;
-    let userIsConnected  = Boolean(web3state.user?.address);
-    let connectedNetwork = web3state.network || "offline";
+    let userAddress = web3state.user?.address || "logged-out";
+    let userFlexPoints = web3state.user?.flexPoints || 0;
+    let userFlexOffers = web3state.user?.totalFlexOffers || 0;
+    let userIsConnected  = web3state.connected;
+    let connectedNetwork = web3state.networkName ;
 
-    let onlineTag = <Tag color={userIsConnected ? "green" : "red"}>{ connectedNetwork }</Tag>
+    let onlineTag = <Tag color={userIsConnected ? "blue" : "red"}>Network: { connectedNetwork }</Tag>
     let titleText = _shortenTitle(userAddress);
 
     let logInOutAction = userIsConnected ? "logout" : "login";
-    let logInOutButton = <Button onClick={() => dispatch(logInOutAction)}>{userIsConnected ? "Log Out" : "Log In"} </Button>
+    let logInOutButton = <Button key="0" onClick={() => dispatch(logInOutAction)}>{userIsConnected ? "Log Out" : "Log In"} </Button>
     
 
     return <PageHeader 
@@ -35,9 +34,6 @@ function AppHeader() {
         title={ titleText }
         subTitle={`${userFlexPoints} Flexpoints, ${userFlexOffers} FlexOffers`}
         tags={onlineTag}
-        extra={[
-            logInOutButton
-        ]}
     ></PageHeader>
 
 }
