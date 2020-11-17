@@ -1,25 +1,41 @@
 import logo from './logo.svg';
 import './App.css';
 
+/* import { Web3Context, Web3Connection } from "./features/Web3State/web3State"; */
+import { useReducer } from 'react';
+
+// Ant Design imports
+import 'antd/dist/antd.css';
+import { Layout, Menu } from 'antd';
+/*import {
+  LogoutOutlined,
+  LoginOutlined
+} from '@ant-design/icons';*/
+const { Header, Content, Sider } = Layout;
+
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+
+  // let [web3, reducer] = useReducer(initialState);
+  return (<Layout style={{ minHeight: '100vh' }}>
+    <Sider collapsible>
+      <img src="eflex.jpg" className="logo" alt="eflex-logo" />
+      <Menu theme="dark" defaultSelectedKeys={["1"]} mode="inline">
+        <Menu.Item key="1" /*icon={<LogoutOutlined />}*/>
+          Bidding
+        </Menu.Item>
+<Menu.Item key="2" /*icon={<LoginOutlined />}*/>
+          Offering
+        </Menu.Item>
+      </Menu>
+    </Sider>
+    <Layout className="site-layout">
+      <Header className="site-layout-background" style={{ padding: 0 }} />
+      <Content style={{ margin: "0 16px" }}>
+        <div className="site-layout-background" style={{ padding: 24, minHeight: 360 }}>
+        </div>
+      </Content>
+    </Layout>
+  </Layout>);
 }
 
 export default App;
