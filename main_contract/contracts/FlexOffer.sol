@@ -33,13 +33,13 @@ contract FlexOffer is ERC721, ERC721Burnable{
 
     mapping (uint256 => flex_offer_data) public flex_offers_mapping;
 
-    event flexOfferMinted (uint256 indexed flexOfferId);
+    event flexOfferMinted (uint256 indexed flexOfferId, address indexed og_owner);
 
-    event flexOfferBidSuccess(uint256 indexed flexOfferId);
+    event flexOfferBidSuccess(uint256 indexed flexOfferId, address indexed new_owner);
 
-    event flexOfferActivation(uint256 indexed flexOfferId,uint256 flexPointCalc);
+    event flexOfferActivation(uint256 indexed flexOfferId,uint256 flexPointCalc, address indexed curr_owner);
 
-    event ethForFlexPoint(address indexed _address, uint ethAmount, uint pointAmount);
+    event ethForFlexPoint(address indexed _address, uint ethAmount, uint pointAmount, address indexed curr_owner);
 
     // event flex_offer_bid_failed(uint256 indexed flexTokenId);
 
@@ -83,7 +83,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         _safeMint(_msgSender(),_flex_offer_id);
         _initiate_flex_offer_data(_flex_offer_id, power, duration, start_time, end_time);
         require(_exists(_flex_offer_id), "flex offer does not exist");
-        emit flexOfferMinted(_flex_offer_id);
+        emit flexOfferMinted(_flex_offer_id, _msgSender());
         return uint256(_flex_offer_id);
     }
 
@@ -102,7 +102,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         payable(ownerOf(flexOfferId)).transfer(flex_offers_mapping[flexOfferId].curr_bid);
         _transfer(ownerOf(flexOfferId), _msgSender(), flexOfferId);
         flex_offers_mapping[flexOfferId].curr_bid = msg.value;
-        emit flexOfferBidSuccess(flexOfferId);
+        emit flexOfferBidSuccess(flexOfferId, _msgSender());
     }
 
     // the activation of the flex offer also burns the flex offer
@@ -116,7 +116,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint256 flexPointCalc = CalFlexPointIssue(flexOfferId);
         FP.IssueFlexPoint( flex_offers_mapping[flexOfferId].og_owner, flexPointCalc);
         _burn(flexOfferId);
-        emit flexOfferActivation(flexOfferId ,flexPointCalc);
+        emit flexOfferActivation(flexOfferId ,flexPointCalc, _msgSender());
     }
 
     // Fallback activation if
@@ -142,7 +142,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint ethAmount = (pointAmount*ethBalance)/flexPointSupply;
         FP.ClaimFlexPoints (_msgSender(), pointAmount);
         require(_msgSender().send(ethAmount));
-        emit ethForFlexPoint(_msgSender(), ethAmount, pointAmount);
+        emit ethForFlexPoint(_msgSender(), ethAmount, pointAmount, _msgSender());
     }
 
 
