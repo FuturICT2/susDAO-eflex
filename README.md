@@ -43,6 +43,15 @@ There are two tokens that are created for the flexwise implementation:
     * upon calling, the corresponding eth will be reimbursed to the caller and the exchanged flexpoints will be burned
     * the event **ethForFlexPoint(_msgSender(), ethAmount, ethBalance,flexPointSupply,pointAmount)** will be emited upon successful transaction
 
+6. GetMyTotMintedFlexOffers()
+    * Call this to get the total number of contracts that you have minted.
+    * This also represents the length of the list that you can iterate through to access your contracts
+
+7. GetMyFlexOffer(uint256 i)
+    * Call this to get the specific contract that you have created
+    * Will return the flexOfferId in chronoloigcal order with the i=0 giving your first ever flexOffer offered by you
+    * use GetMyTotMintedFlexOffers() to find out how many you have in total so you can iterate over it
+
 ### Call functions
 
 There are actually 2 contracts deployed for flexwise:
