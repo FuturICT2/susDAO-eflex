@@ -3,6 +3,7 @@ from web3 import Web3, HTTPProvider
 
 
 blockchain_address = 'http://127.0.0.1:7545/'
+networkid = '5777'
 
 web3_A = Web3(HTTPProvider(blockchain_address))
 web3_A.eth.defaultAccount = web3_A.eth.accounts[0]
@@ -15,12 +16,15 @@ web3_C.eth.defaultAccount = web3_B.eth.accounts[2]
 
 compiled_offer_path = '../build/contracts/FlexOffer.json'
 compiled_point_path = '../build/contracts/FlexPoint.json'
-deployed_offer_address = '0xDc6AC4E26D052509C6953049EAD8DDE2B51CA6d1'
+# deployed_offer_address = '0x199A786581e00938445a36E100C35F8F5f5022d5'
 
 with open(compiled_offer_path) as file:
     offer_json = json.load(file)
     offer_abi = offer_json['abi']
 
+
+deployed_offer_address = offer_json["networks"][networkid]["address"]
+print(deployed_offer_address)
 contract_A = web3_A.eth.contract(address=deployed_offer_address,abi=offer_abi)
 contract_B = web3_B.eth.contract(address=deployed_offer_address,abi=offer_abi)
 contract_C = web3_C.eth.contract(address=deployed_offer_address,abi=offer_abi)
@@ -36,11 +40,16 @@ def one_run():
     now = int(time.time())
     hr = 60*60
 
+    # check how many contracts A minted
+    contract_num_A = contract_A.functions.GetMyTotMintedFlexOffers().call()
+    print ("contract A has minted {0} flex offers".format(contract_num_A))
     # Test Case
     # 1) Contract A creates the flexOffer
     # 2) Check that the token created by A is minted
     contract_A.functions.mint_flex_offer_to(10,2,int(now+0.5*hr),now+hr).transact()
     flexOfferMinted_filter = contract_A.events.flexOfferMinted.createFilter(fromBlock = 'latest')
+    mint_event_args = flexOfferMinted_filter.get_all_entries()[0].args
+    print("mint_event_args:{0}".format(mint_event_args))
     emitedTokenID = flexOfferMinted_filter.get_all_entries()[0].args.flexOfferId
     print("minted event dict: " + str(flexOfferMinted_filter.get_all_entries()))
     # print("emitedTokenID: " + str(emitedTokenID))
@@ -51,8 +60,13 @@ def one_run():
     if emitedTokenID == tokenIdA:
         print('Mint token function passed')
 
+    # Check that now contract A has 1 flex offer
+    contract_num_A = contract_A.functions.GetMyTotMintedFlexOffers().call()
+    print ("contract A has minted {0} flex offers".format(contract_num_A))
+
     contract_balance = web3_A.eth.getBalance(deployed_offer_address)
     print ("contract_balance base: " + str(contract_balance)) 
+
 
     # 2) contract B will bid for the flex offer and win the contract
     # Desired output is that B will own the contract
@@ -231,7 +245,15 @@ one_run()
 print("Time to get money outttttttttttttttttttttttttt")
 get_money_out()
 
+# Iterate through all the offers created by contract A
 
 
+contract_num_A = contract_A.functions.GetMyTotMintedFlexOffers().call()
+print ("contract A has minted {0} flex offers".format(contract_num_A))
+
+for i in range(contract_num_A):
+    flexOfferId = contract_A.functions.GetMyFlexOffer(i).call()
+    print("flex offer id:{0}".format(flexOfferId))
+    print(contract_A.functions.flex_offers_mapping(flexOfferId).call())
 
 

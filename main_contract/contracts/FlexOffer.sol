@@ -3,7 +3,9 @@ pragma solidity >=0.4.22 <0.8.0;
 
 import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721Burnable.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/IERC721Enumerable.sol";
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+
 import "./FlexPoint.sol";
 
 // Basically, I need to create an ER721 token with the following functionality
@@ -21,6 +23,9 @@ import "./FlexPoint.sol";
 contract FlexOffer is ERC721, ERC721Burnable{
     string public memory_string;
     FlexPoint public FP;
+    uint256 internal flexOfferCount;
+    uint internal offerTimeBuffer;
+    uint internal bidTimeBuffer;
 
     struct flex_offer_data {
         address og_owner;
@@ -31,15 +36,18 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint curr_bid;
     }
 
+    // mapping thats links an address to the list of flex offers they have created
+    mapping(address => uint256[]) public flexOfferMintMapping;
+
     mapping (uint256 => flex_offer_data) public flex_offers_mapping;
 
-    event flexOfferMinted (uint256 indexed flexOfferId);
+    event flexOfferMinted (uint256 indexed flexOfferId, address indexed og_owner);
 
-    event flexOfferBidSuccess(uint256 indexed flexOfferId);
+    event flexOfferBidSuccess(uint256 indexed flexOfferId, address indexed new_owner);
 
-    event flexOfferActivation(uint256 indexed flexOfferId,uint256 flexPointCalc);
+    event flexOfferActivation(uint256 indexed flexOfferId,uint256 flexPointCalc, address indexed curr_owner);
 
-    event ethForFlexPoint(address indexed _address, uint ethAmount, uint pointAmount);
+    event ethForFlexPoint(address indexed _address, uint ethAmount, uint pointAmount, address indexed curr_owner);
 
     // event flex_offer_bid_failed(uint256 indexed flexTokenId);
 
@@ -48,6 +56,17 @@ contract FlexOffer is ERC721, ERC721Burnable{
     constructor() ERC721("Flex_Offer","FO") public {
         memory_string = "heyo";
         FP = new FlexPoint();
+        flexOfferCount = 0;
+        bidTimeBuffer = 10;
+        offerTimeBuffer = 60; 
+    }
+
+    function GetMyTotMintedFlexOffers() public returns(uint256){
+        return uint256(flexOfferMintMapping[_msgSender()].length);
+    }
+    
+    function GetMyFlexOffer(uint256 i) public returns(uint256){
+        return uint256(flexOfferMintMapping[_msgSender()][i]);
     }
 
     function CalFlexPointIssue(uint256 flexOfferId) internal view returns (uint256){
@@ -57,7 +76,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint pow = flex_offers_mapping[flexOfferId].power;
         return ((end-start-dur)/(end-start-dur))*(dur)*(pow);
     }
-
+    // include a incrementing counter
     function create_flex_offer_id ( address _address, uint timestamp ) internal pure returns (bytes32){
         return keccak256(abi.encodePacked(_address, timestamp));
     } 
@@ -79,11 +98,16 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint start_time,
         uint end_time
     ) public returns (uint256){
-        uint256 _flex_offer_id = uint256(create_flex_offer_id (_msgSender(),block.timestamp));
+        // uint256 _flex_offer_id = uint256(create_flex_offer_id (_msgSender(),block.timestamp));
+        // require for the start_time to be later than the offer time buffer
+        require(block.timestamp+offerTimeBuffer < start_time, "start time too close to offer time. Does not allow time for bidders to bid");
+        uint256 _flex_offer_id = flexOfferCount; 
+        flexOfferMintMapping[_msgSender()].push(_flex_offer_id);
         _safeMint(_msgSender(),_flex_offer_id);
         _initiate_flex_offer_data(_flex_offer_id, power, duration, start_time, end_time);
         require(_exists(_flex_offer_id), "flex offer does not exist");
-        emit flexOfferMinted(_flex_offer_id);
+        flexOfferCount = flexOfferCount + 1;
+        emit flexOfferMinted(_flex_offer_id, _msgSender());
         return uint256(_flex_offer_id);
     }
 
@@ -92,7 +116,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint currBid = flex_offers_mapping[flexOfferId].curr_bid;
         // Require that the bid is within the bid window
         require(
-            (block.timestamp+900) < flex_offers_mapping[flexOfferId].start_time,
+            (block.timestamp+bidTimeBuffer) < flex_offers_mapping[flexOfferId].start_time,
             "Flex Offer is no longer biddable"
         );
         require(
@@ -102,7 +126,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         payable(ownerOf(flexOfferId)).transfer(flex_offers_mapping[flexOfferId].curr_bid);
         _transfer(ownerOf(flexOfferId), _msgSender(), flexOfferId);
         flex_offers_mapping[flexOfferId].curr_bid = msg.value;
-        emit flexOfferBidSuccess(flexOfferId);
+        emit flexOfferBidSuccess(flexOfferId, _msgSender());
     }
 
     // the activation of the flex offer also burns the flex offer
@@ -116,7 +140,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint256 flexPointCalc = CalFlexPointIssue(flexOfferId);
         FP.IssueFlexPoint( flex_offers_mapping[flexOfferId].og_owner, flexPointCalc);
         _burn(flexOfferId);
-        emit flexOfferActivation(flexOfferId ,flexPointCalc);
+        emit flexOfferActivation(flexOfferId ,flexPointCalc, _msgSender());
     }
 
     // Fallback activation if
@@ -142,7 +166,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint ethAmount = (pointAmount*ethBalance)/flexPointSupply;
         FP.ClaimFlexPoints (_msgSender(), pointAmount);
         require(_msgSender().send(ethAmount));
-        emit ethForFlexPoint(_msgSender(), ethAmount, pointAmount);
+        emit ethForFlexPoint(_msgSender(), ethAmount, pointAmount, _msgSender());
     }
 
 
