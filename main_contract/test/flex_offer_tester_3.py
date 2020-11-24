@@ -3,6 +3,7 @@ from web3 import Web3, HTTPProvider
 
 
 blockchain_address = 'http://127.0.0.1:7545/'
+networkid = '5777'
 
 web3_A = Web3(HTTPProvider(blockchain_address))
 web3_A.eth.defaultAccount = web3_A.eth.accounts[0]
@@ -15,12 +16,15 @@ web3_C.eth.defaultAccount = web3_B.eth.accounts[2]
 
 compiled_offer_path = '../build/contracts/FlexOffer.json'
 compiled_point_path = '../build/contracts/FlexPoint.json'
-deployed_offer_address = '0xDc6AC4E26D052509C6953049EAD8DDE2B51CA6d1'
+# deployed_offer_address = '0x199A786581e00938445a36E100C35F8F5f5022d5'
 
 with open(compiled_offer_path) as file:
     offer_json = json.load(file)
     offer_abi = offer_json['abi']
 
+
+deployed_offer_address = offer_json["networks"][networkid]["address"]
+print(deployed_offer_address)
 contract_A = web3_A.eth.contract(address=deployed_offer_address,abi=offer_abi)
 contract_B = web3_B.eth.contract(address=deployed_offer_address,abi=offer_abi)
 contract_C = web3_C.eth.contract(address=deployed_offer_address,abi=offer_abi)
@@ -41,6 +45,8 @@ def one_run():
     # 2) Check that the token created by A is minted
     contract_A.functions.mint_flex_offer_to(10,2,int(now+0.5*hr),now+hr).transact()
     flexOfferMinted_filter = contract_A.events.flexOfferMinted.createFilter(fromBlock = 'latest')
+    mint_event_args = flexOfferMinted_filter.get_all_entries()[0].args
+    print("mint_event_args:{0}".format(mint_event_args))
     emitedTokenID = flexOfferMinted_filter.get_all_entries()[0].args.flexOfferId
     print("minted event dict: " + str(flexOfferMinted_filter.get_all_entries()))
     # print("emitedTokenID: " + str(emitedTokenID))
