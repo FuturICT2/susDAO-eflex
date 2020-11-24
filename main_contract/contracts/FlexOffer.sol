@@ -20,7 +20,7 @@ import "./FlexPoint.sol";
 // 3) If we want ownership to change, then all the participants must give approval to contract before joining
 
 
-contract FlexOffer is ERC721, ERC721Burnable, IERC721Enumerable{
+contract FlexOffer is ERC721, ERC721Burnable{
     string public memory_string;
     FlexPoint public FP;
     uint256 internal flexOfferCount;
