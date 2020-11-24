@@ -3,7 +3,9 @@ pragma solidity >=0.4.22 <0.8.0;
 
 import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721Burnable.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/IERC721Enumerable.sol";
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+
 import "./FlexPoint.sol";
 
 // Basically, I need to create an ER721 token with the following functionality
@@ -18,9 +20,12 @@ import "./FlexPoint.sol";
 // 3) If we want ownership to change, then all the participants must give approval to contract before joining
 
 
-contract FlexOffer is ERC721, ERC721Burnable{
+contract FlexOffer is ERC721, ERC721Burnable, IERC721Enumerable{
     string public memory_string;
     FlexPoint public FP;
+    uint256 internal flexOfferCount;
+    uint internal offerTimeBuffer;
+    uint internal bidTimeBuffer;
 
     struct flex_offer_data {
         address og_owner;
@@ -30,6 +35,9 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint end_time;
         uint curr_bid;
     }
+
+    // mapping thats links an address to the list of flex offers they have created
+    mapping(address => uint256[]) public flexOfferMintMapping;
 
     mapping (uint256 => flex_offer_data) public flex_offers_mapping;
 
@@ -48,6 +56,9 @@ contract FlexOffer is ERC721, ERC721Burnable{
     constructor() ERC721("Flex_Offer","FO") public {
         memory_string = "heyo";
         FP = new FlexPoint();
+        flexOfferCount = 0;
+        bidTimeBuffer = 10;
+        offerTimeBuffer = 60; 
     }
 
     function CalFlexPointIssue(uint256 flexOfferId) internal view returns (uint256){
@@ -57,7 +68,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint pow = flex_offers_mapping[flexOfferId].power;
         return ((end-start-dur)/(end-start-dur))*(dur)*(pow);
     }
-
+    // include a incrementing counter
     function create_flex_offer_id ( address _address, uint timestamp ) internal pure returns (bytes32){
         return keccak256(abi.encodePacked(_address, timestamp));
     } 
@@ -79,10 +90,15 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint start_time,
         uint end_time
     ) public returns (uint256){
-        uint256 _flex_offer_id = uint256(create_flex_offer_id (_msgSender(),block.timestamp));
+        // uint256 _flex_offer_id = uint256(create_flex_offer_id (_msgSender(),block.timestamp));
+        // require for the start_time to be later than the offer time buffer
+        require(block.timestamp+offerTimeBuffer < start_time, "start time too close to offer time. Does not allow time for bidders to bid");
+        uint256 _flex_offer_id = flexOfferCount; 
+        flexOfferMintMapping[_msgSender()].push(_flex_offer_id);
         _safeMint(_msgSender(),_flex_offer_id);
         _initiate_flex_offer_data(_flex_offer_id, power, duration, start_time, end_time);
         require(_exists(_flex_offer_id), "flex offer does not exist");
+        flexOfferCount = flexOfferCount + 1;
         emit flexOfferMinted(_flex_offer_id, _msgSender());
         return uint256(_flex_offer_id);
     }
@@ -92,7 +108,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint currBid = flex_offers_mapping[flexOfferId].curr_bid;
         // Require that the bid is within the bid window
         require(
-            (block.timestamp+900) < flex_offers_mapping[flexOfferId].start_time,
+            (block.timestamp+bidTimeBuffer) < flex_offers_mapping[flexOfferId].start_time,
             "Flex Offer is no longer biddable"
         );
         require(
