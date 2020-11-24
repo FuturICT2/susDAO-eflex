@@ -1,4 +1,10 @@
-import web3, json, threading, time, asyncio
+import web3, json, threading, time, asyncio, eth_account
+
+def filter(*args, **kwargs):
+    def decorator(f):
+        f.__filter_args = args, kwargs
+        return f
+    return decorator
 
 class AsyncContract:
     # Collects all contract instances to start them all at once using start_all
@@ -26,15 +32,15 @@ class AsyncContract:
             address = self.address
         )
 
-        self.private_key = private_key
-
-        # Setup info used to make transactions
-        self._transaction_info = {
-            "from": self.w3.eth.coinbase,
-        }
+        if private_key is None:
+            self.account = eth_account.Account.create()
+        else:
+            self.account = eth_account.Account.from_key(private_key)    
+        self.w3.eth.defaultAccount = self.account.address
 
         # Setup registries for event callbacks
-        self.event_subs = {} # {event_name: {callback_1, callback_2}}       
+        self.event_callbacks = {} # {event_name: {callback_1, callback_2}}
+        self.event_tasks = {} # {event_name: task} one task per event
         self.filters = {} # {event_name: filter}
 
 
@@ -49,20 +55,22 @@ class AsyncContract:
         else:
             def contract_fun_wrapper(*args, **kwargs):
                 fun = getattr(self.contract.functions, attrname)
-                trans = fun(*args, **kwargs).buildTransaction(self._transaction_info)
+                nonce = self.w3.eth.getTransactionCount(self.account.address)
+                trans = fun(*args, **kwargs).buildTransaction({
+                    "nonce": nonce
+                    })
 
-                if self.private_key is not None:
-                    signed_trans = self.w3.eth.account.sign_transaction(trans, private_key = self.private_key)
-                    self.w3.eth.sendRawTransaction(signed_trans.rawTransaction)
-                else:
-                    self.w3.eth.sendTransaction(trans)
+                signed_trans = self.account.sign_transaction(trans)
+                trans_hash = self.w3.eth.sendRawTransaction(signed_trans.rawTransaction)
+                # Wait for transaction to complete, return receipt
+                return self.w3.eth.waitForTransactionReceipt(trans_hash)
                 
             return contract_fun_wrapper
     
-    async def _loop_once(self):
+    async def poll_events(self):
         """ Polls and dispatches all events once. """
         # For each event type
-        for event_name in self.event_subs:
+        for event_name in self.event_callbacks:
             # Create new filter if not yet existing
             if event_name not in self.filters:
                 self.filters[event_name] = getattr(self.contract.events, event_name)\
@@ -71,8 +79,8 @@ class AsyncContract:
             # For each event of that type
             for event in self.filters[event_name].get_new_entries():
                 # Call each event type subscriber
-                for event_sub in self.event_subs[event_name]:
-                    await event_sub(**(event.args))
+                for callback in self.event_callbacks[event_name]:
+                    await callback(**(event.args))
     
     def on(self, event_name):
         """
@@ -85,7 +93,7 @@ class AsyncContract:
             print(myArgument)
         """
         def fun_recv(fun):
-            event_set = self.event_subs.setdefault(event_name, set())
+            event_set = self.event_callbacks.setdefault(event_name, set())
             event_set.add(fun)
             
             return fun
@@ -99,7 +107,7 @@ class AsyncContract:
 
         async def loop():
             while True:
-                await self._loop_once()
+                await self.poll_events()
                 await asyncio.sleep(1)
 
         asyncio.run(loop())
@@ -113,14 +121,14 @@ class AsyncContract:
     
     @classmethod
     def start_all(cls):
-        """ Starts looping over _loop_once methods of all instances of this class. Doesn't return. """
+        """ Starts looping over poll_events methods of all instances of this class. Doesn't return. """
         for instance in cls._instance_reg:
             instance._register_on_methods()
         
         async def loop():
             while True:
                 for instance in cls._instance_reg:
-                    await instance._loop_once()
+                    await instance.poll_events()
 
                 await asyncio.sleep(1)
         try:
