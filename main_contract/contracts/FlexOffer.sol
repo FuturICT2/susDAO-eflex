@@ -61,6 +61,14 @@ contract FlexOffer is ERC721, ERC721Burnable{
         offerTimeBuffer = 60; 
     }
 
+    function GetMyTotMintedFlexOffers() public returns(uint256){
+        return uint256(flexOfferMintMapping[_msgSender()].length);
+    }
+    
+    function GetMyFlexOffer(uint256 i) public returns(uint256){
+        return uint256(flexOfferMintMapping[_msgSender()][i]);
+    }
+
     function CalFlexPointIssue(uint256 flexOfferId) internal view returns (uint256){
         uint start = flex_offers_mapping[flexOfferId].start_time;
         uint end = flex_offers_mapping[flexOfferId].end_time;
