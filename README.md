@@ -29,22 +29,21 @@ yarn install
 cd ..
 ```
 ### Start working
-#### Setup and deploy contract
 Each of these commands has to be run ina different shell instance (except for deploy_contract):
 
 * Start ganache:
     
         make ganache
 
-* Deploy the contract
+* Deploy contracts
 
         make deploy_contract
 
-* Start the auto bidder: Simulates bidders
+* Start the auto bidder (optional, simulates bidders on market)
 
         make autobidder
 
-* Start the auto offerer: Simulates offerers
+* Start the auto offerer (optional, simulates offerers on market)
 
         make autoofferer
 
