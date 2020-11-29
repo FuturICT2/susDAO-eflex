@@ -1,7 +1,7 @@
 import { createContext, useEffect, useContext } from 'react';
 import Web3 from 'web3';
 import detectEthereumProvider from '@metamask/detect-provider';
-//import Flex_Offer from '../contracts/Flex_Offer.json';
+import FlexOffer from '../../artifacts/FlexOffer.json';
 
 const initialState = {
     user: undefined,
@@ -47,9 +47,9 @@ function reducer(state, action) {
                 ...flexOffer
             }
 
-            return {...state, 
+            return {...state,
                 allFlexOffers: {
-                    ...state.allFlexOffers, 
+                    ...state.allFlexOffers,
                     [[flexOfferId]]: flexOfferCompleted
                 }}
         },
@@ -58,6 +58,10 @@ function reducer(state, action) {
             let flexOffersCopy = state.allFlexOffers;
             delete flexOffersCopy[flexOfferId];
             return {...state, allFlexOffers: flexOffersCopy};
+        },
+
+        setContract:  (contract)=>{
+          return { ...state, contract: contract }
         }
     }
     console.log("Action emitted: ", action.type);
@@ -70,12 +74,12 @@ function Web3Manager() {
     const initProvider = async (provider, web3) => {
         let chainId = provider.chainId;
         let accountAddress = (await provider.request({ method: 'eth_requestAccounts' }))[0];
-        let netId = +(await provider.request({ method: 'net_version' }));
+        let netId = await provider.request({ method: 'net_version' });
         // Contract stuff
-        /*
-        let contractData = Flex_Offer.networks[+netId];
-        let flexOffer = new web3.eth.Contract(Flex_Offer.abi, contractData?.address);
-        */
+        let contractData = FlexOffer.networks[netId];
+        // console.log(netId);
+        let flexOffer = new web3.eth.Contract(FlexOffer.abi, contractData.address);
+
 
         // Set initial data
         dispatch('update', {
@@ -89,7 +93,7 @@ function Web3Manager() {
         // (state, action) => state
 
         dispatch('setChainId', chainId);
-
+        dispatch('setContract',flexOffer);
         var eventCallbacks = {
             accountsChanged: (accounts) => {
                 dispatch('updateUser', {address: accounts[0]});
@@ -122,8 +126,8 @@ function Web3Manager() {
         // DEBUG
         let addOffer = () => dispatch("addFlexOffer", { flexOfferId: String(Math.random()), flexOffer: {} });
         addOffer();
-        addOffer();
-        setInterval(()=>dispatch("addFlexOffer", {flexOfferId: String(Math.random()), flexOffer: {}}), 3000);
+        // addOffer();
+        // setInterval(()=>dispatch("addFlexOffer", {flexOfferId: String(Math.random()), flexOffer: {}}), 3000);
     }
 
     const detectProvider = async () => {
