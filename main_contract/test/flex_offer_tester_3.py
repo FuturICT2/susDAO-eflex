@@ -42,7 +42,7 @@ def one_run():
 
     # check how many contracts A minted
     contract_num_A = contract_A.functions.GetMyTotMintedFlexOffers().call()
-    print ("contract A has minted {0} flex offers".format(contract_num_A))
+    GetMyTotMintedFlexOffers_filter = contract_A.events.msgSenderEvent.createFilter(fromBlock = 'latest')
     # Test Case
     # 1) Contract A creates the flexOffer
     # 2) Check that the token created by A is minted
