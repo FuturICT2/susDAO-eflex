@@ -17,6 +17,7 @@ import {
 } from 'antd';
 
 import { Web3Context } from '../web3State/web3State';
+import {WashMachine} from './washingMachine';
 
 const { Title } = Typography;
 
@@ -66,7 +67,7 @@ const columns = [
     dataIndex: 'offerId',
     key: 'offerId',
     ellipsis: true,
-    width: '20%'
+    // width: '20%'
   },
   {
     title: 'Power',
@@ -89,9 +90,9 @@ const columns = [
     key: 'end_time'
   },
   {
-    title: 'Bidder Address',
-    dataIndex: 'bidderAddress',
-    key: 'bidderAddress',
+    title: 'Current bidding price',
+    dataIndex: 'bidprice',
+    key: 'bidprice',
   }
 ]
 
@@ -107,6 +108,8 @@ function OfferView() {
     // either connected or not
     let loggedin = (web3state.user?.address && contract);
 
+    // time buffer
+    const tfinminutes = 1;
     const getNewOffer = (offerinfo)=>{
       let hours = Math.floor(offerinfo[2] / 3600);
       let minutes = Math.floor(offerinfo[2] % 3600 / 60);
@@ -116,7 +119,7 @@ function OfferView() {
         duration: hours+' h '+minutes+' m',
         start_time: moment.unix(offerinfo[3]).format("YYYY-MM-DD hh:mm"),
         end_time: moment.unix(offerinfo[4]).format("YYYY-MM-DD hh:mm"),
-        bidderAddress: offerinfo[5],
+        bidprice: offerinfo[5],
       };
       return offerData;
     }
@@ -124,11 +127,14 @@ function OfferView() {
       const init = async () => {
         if(loggedin){
           const account = web3state.user.address;
-          const nflex = await contract.methods.balanceOf(account).call();
+          // const nflex = await contract.methods.balanceOf(account).call();
+          const nflex = await contract.methods.GetMyTotMintedFlexOffers(account).call();
           let offerDataAll = [];
           for (let i = 0; i < nflex; i++) {
-            let flex_token_id = await contract.methods.tokenOfOwnerByIndex(account, i).call();
+            // let flex_token_id = await contract.methods.tokenOfOwnerByIndex(account, i).call();
+            let flex_token_id = await contract.methods.GetMyFlexOffer(account,i).call();
             let offerinfo = await contract.methods.flex_offers_mapping(flex_token_id).call();
+            // console.log(offerinfo);
             offerinfo['flexId'] = flex_token_id;
             let offerData = getNewOffer(offerinfo);
             offerDataAll.unshift(offerData);
@@ -174,12 +180,12 @@ function OfferView() {
         window.alert('Please provide the duration of the flex offer')
       }else {
         let now = moment();
-        let now15m = moment(now).add(15, 'minutes').unix();
+        let now15m = moment(now).add(tfinminutes, 'minutes').unix();
         if(offer.end_time<now15m || offer.start_time<now15m){
           window.alert('The duration of the flex offer should be set to more than 15 minutes later from now')
         }else{
           const duration = 3600*offer.runh+60*offer.runm;
-          if (duration> offer.end_time - offer.start_time -900){
+          if (duration> offer.end_time - offer.start_time -tfinminutes*60){
             window.alert('The operating time should be at least 15 minutes larger than the flexoffer duration')
           }else{
             let powerinW=offer.power;
@@ -210,8 +216,10 @@ function OfferView() {
 
     const { RangePicker } = DatePicker;
     const { Option } = Select;
-    return <>
+    return <div>
     <Title level={1}>Offer</Title>
+    <WashMachine />
+    <br/><br/>
     <Form
         labelCol={{
           span: 4,
@@ -267,7 +275,7 @@ function OfferView() {
         </Form.Item>
       </Form>
       <Table columns={columns} dataSource={currentOffers} />
-    </>
+    </div>
 }
 
 
