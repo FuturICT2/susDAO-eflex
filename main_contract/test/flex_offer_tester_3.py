@@ -41,8 +41,6 @@ def one_run():
     hr = 60*60
 
     # check how many contracts A minted
-    contract_num_A = contract_A.functions.GetMyTotMintedFlexOffers().call()
-    GetMyTotMintedFlexOffers_filter = contract_A.events.msgSenderEvent.createFilter(fromBlock = 'latest')
     # Test Case
     # 1) Contract A creates the flexOffer
     # 2) Check that the token created by A is minted
@@ -193,12 +191,16 @@ def one_run():
     # Check if the token is being burned
     try:
         flex_off_owner = contract_C.functions.ownerOf(tokenIdC).call()
+        print(flex_off_owner)
     except ValueError:
         print("token is burn")
 
     # Check contract A flexpoint balance after activation
     contract_A_balance = contract_A_point.functions.balanceOf(web3_A.eth.defaultAccount).call()
     print("contract_A_balance: " + str(contract_A_balance))
+
+
+    # Contract A should create amother flex offer
 
 # Time to get money out of the bank
 def get_money_out():
