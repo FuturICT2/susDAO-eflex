@@ -146,7 +146,12 @@ def contract_state_by_accounts():
         # print(user_dict[user]['acc'].functions.balanceOf(user_dict[user]['add']).call())
         user_dict[user]['tokens_own'] = user_dict[user]['acc'].functions.balanceOf(user_dict[user]['add']).call()
         user_dict[user]['points_own'] = user_dict[user]['acc_p'].functions.balanceOf(user_dict[user]['add']).call()
-    pprint.pprint(user_dict)
+        user_dict[user]['eth_own'] = web3_A.eth.getBalance(user_dict[user]['add'])
+    # pprint.pprint(user_dict)
+    return user_dict
+
+def get_contract_balance():
+    print ('contract balance:{0}'.format(web3_A.eth.getBalance(deployed_offer_address)))
 
 
 # Include a check for the emited event
@@ -196,7 +201,11 @@ def end_time_activate(account,flex_offer_id):
         print(e.args[0]['message'])
         return
 
-def claim_eth_with_flex_points(account,perc):
+def claim_eth_with_flex_points(account,add,perc):
+    user_dict = contract_state_by_accounts()
+    user = address_dict[add]
+    points = user_dict[user]['points_own']
+    account.functions.ClaimEthWithFlexPoint(int(points*perc)).transact()
 
 
 if __name__ == "__main__":
@@ -207,12 +216,14 @@ if __name__ == "__main__":
     sleep(1)
     now = int(time.time())
     flex_offer_id_2 = create_flex_offer(account_A,add_A,10,1,int(now+70),now+100)
-    contract_state_by_accounts()
+    state = contract_state_by_accounts()
+    pprint.pprint(state)
     bid_flex_offer(account_B,add_B,flex_offer_id_1,5)
     bid_flex_offer(account_B,add_B,flex_offer_id_2,5)
     bid_flex_offer(account_C,add_C,flex_offer_id_1,3)
     bid_flex_offer(account_C,add_C,flex_offer_id_1,6)
-    contract_state_by_accounts()
+    state = contract_state_by_accounts()
+    pprint.pprint(state)
     activate_flex_offer(account_B,add_B,flex_offer_id_1)
     time_passed = False
     while not time_passed:
@@ -220,7 +231,8 @@ if __name__ == "__main__":
         activated = activate_flex_offer(account_C,add_C,flex_offer_id_1)
         if activated == 'activated':
             time_passed = True
-    contract_state_by_accounts()
+    state = contract_state_by_accounts()
+    pprint.pprint(state)
     end_time_activate(account_A,flex_offer_id_2)
     time_passed = False
     while not time_passed:
@@ -228,6 +240,11 @@ if __name__ == "__main__":
         activated = end_time_activate(account_A,flex_offer_id_2)
         if activated == 'activated':
             time_passed = True
-    contract_state_by_accounts()
-
+    state = contract_state_by_accounts()
+    pprint.pprint(state)
+    get_contract_balance()
+    claim_eth_with_flex_points(account_A,add_A,0.5)
+    get_contract_balance()
+    state = contract_state_by_accounts()
+    pprint.pprint(state)
     flex_offers_created_by(account_A,add_A)
