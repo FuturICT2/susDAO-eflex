@@ -40,6 +40,9 @@ def one_run():
     now = int(time.time())
     hr = 60*60
 
+    # check how many contracts A minted
+    contract_num_A = contract_A.functions.GetMyTotMintedFlexOffers().call()
+    GetMyTotMintedFlexOffers_filter = contract_A.events.msgSenderEvent.createFilter(fromBlock = 'latest')
     # Test Case
     # 1) Contract A creates the flexOffer
     # 2) Check that the token created by A is minted
@@ -57,8 +60,13 @@ def one_run():
     if emitedTokenID == tokenIdA:
         print('Mint token function passed')
 
+    # Check that now contract A has 1 flex offer
+    contract_num_A = contract_A.functions.GetMyTotMintedFlexOffers().call()
+    print ("contract A has minted {0} flex offers".format(contract_num_A))
+
     contract_balance = web3_A.eth.getBalance(deployed_offer_address)
     print ("contract_balance base: " + str(contract_balance)) 
+
 
     # 2) contract B will bid for the flex offer and win the contract
     # Desired output is that B will own the contract
@@ -237,7 +245,15 @@ one_run()
 print("Time to get money outttttttttttttttttttttttttt")
 get_money_out()
 
+# Iterate through all the offers created by contract A
 
 
+contract_num_A = contract_A.functions.GetMyTotMintedFlexOffers().call()
+print ("contract A has minted {0} flex offers".format(contract_num_A))
+
+for i in range(contract_num_A):
+    flexOfferId = contract_A.functions.GetMyFlexOffer(i).call()
+    print("flex offer id:{0}".format(flexOfferId))
+    print(contract_A.functions.flex_offers_mapping(flexOfferId).call())
 
 
