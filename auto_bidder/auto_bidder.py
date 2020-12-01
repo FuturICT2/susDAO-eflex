@@ -49,52 +49,76 @@ class AutoBidder(web3_contract.AsyncContract):
         self.last_bids[offer_nonce] = max(self.get_last_bid(offer_nonce), bid_amount)
     
 
-    async def on_offerCreated(self, offerNonce):
-        """ Makes an initial bid. Expected to be called once er offer. """
+    async def on_flexOfferMinted(self, flexOfferId, og_owner):
+        """ Makes an initial bid. Expected to be called once per offer. """
         first_bid = min(random.randint(*self.config["first_bid_range"]),
-                        self.get_bid_bound(offerNonce))
-        self.set_last_bid(offerNonce, first_bid)
-        self.bidForFlexOffer(offerNonce, first_bid, self.nonce)
-        
-        self.logger.info(f"Created first bid for {offerNonce}: ${first_bid}, bound: ${self.get_bid_bound(offerNonce)}")
+                        self.get_bid_bound(flexOfferId))
+
+        self.bid_for_offer(flexOfferId, first_bid)
+        self.logger.info(f"Created first bid for {flexOfferId}: Ξ{first_bid}, bound: Ξ{self.get_bid_bound(flexOfferId)}")
     
-    async def on_bidHappened(self, offerNonce, moneyAmount, bidderNonce):
-        if self.nonce == bidderNonce:
+    async def on_flexOfferBidSuccess(self, flexOfferId, new_owner):
+        # Extract bid amount:
+        flex_offer = self.contract.functions.flex_offers_mapping(flexOfferId).call()
+        flex_offer_bid = flex_offer[-1]
+
+        # Check if bid was made by self
+        if self.account_address == new_owner:
             self.logger.debug(f"Not countering bid: is my bid")
             return
         
-        if self.get_last_bid(offerNonce) > moneyAmount:
+        # Check if self already bid better
+        if self.get_last_bid(flexOfferId) > flex_offer_bid:
             self.logger.debug(f"Not countering bid: already countered with better bid")
             return
         
-        if self.get_bid_bound(offerNonce) < moneyAmount:
+        # Check if bid surpassed own bound for this flex-offer
+        if self.get_bid_bound(flexOfferId) < flex_offer_bid:
             self.logger.info(f"Not countering bid: bid surpassed own bound")
             return
+        # Otherwise: counter with higher bid
         else:
-            last_bid = self.get_last_bid(offerNonce)
+            last_bid = self.get_last_bid(flexOfferId)
             bid_increase = random.randint(*self.config["bid_increase_range"])
             new_bid = last_bid + bid_increase
-            self.set_last_bid(offerNonce, new_bid)
-            self.bidForFlexOffer(offerNonce, new_bid, self.nonce)
-            self.logger.info(f"Countered bid for {offerNonce}: ${new_bid}")
+            self.bid_for_offer(flexOfferId, new_bid)
+            self.logger.info(f"Countered bid for {flexOfferId}: Ξ{new_bid}")
 
-
+    def bid_for_offer(self, offerId, offer_amount):
+        """ bids offer_amount wei for offer offerId """
+        # Store last bid
+        self.set_last_bid(offerId, offer_amount)
+        # Create transaction
+        funcall = self.contract.functions.BidForFlexOffer(offerId)
+        nonce = self.w3.eth.getTransactionCount(self.account.address)
+        try:
+            trans = funcall.buildTransaction({
+                "nonce": nonce,
+                "value": offer_amount
+            })
+            # Sign transaction
+            signed_trans = self.account.sign_transaction(trans)
+            # Send transaction
+        
+            self.w3.eth.sendRawTransaction(signed_trans.rawTransaction)
+        except ValueError as e:
+            
+            self.logger.info(f"Bid failed: {e.args[0]['message']}")
 
 
 if __name__ == "__main__":
     import json, argparse
+    from config import config
 
     # Parse arguments
     parser = argparse.ArgumentParser(description="Spawns AutoBidders that automatically bid for flex-offers on the e-flex contract.")
     parser.add_argument("-n",dest="no_bidders", type=int, nargs='?', metavar='n', default=5, help="total amount of bidders to spawn")
-    parser.add_argument("-url",dest="provider_url", type=str, nargs='?', metavar='url', default="http://localhost:7545/", help="http url to eth provider")
+    parser.add_argument("-url",dest="provider_url", type=str, nargs='?', metavar='url', default=config.provider_url, help="http url to eth provider")
     parser.add_argument("-log", dest="log_level", type=str, nargs="?", metavar="level", default="INFO", help="logging level")
     args = parser.parse_args()
 
     # Setup config constants
     PROVIDER_URL = args.provider_url
-    ABI_PATH = "../config/FlexSimAbi.json"
-    DEPLOY_PATH = "../config/FlexSimDeploy.json"
     NUM_BIDDERS = args.no_bidders
     BIDDER_CONFIG = {
         "bidding_target_range": (20, 200),
@@ -103,18 +127,12 @@ if __name__ == "__main__":
         "logging_level": getattr(logging, args.log_level.upper()),
         "logging_handler": logging.StreamHandler(),
     }
-
-    # Load config files
-    with open(ABI_PATH) as f:
-        abi = json.load(f)["abi"]
-
-    with open(DEPLOY_PATH) as f:
-        address = json.load(f)["address"]
     
     flex_manager_contract_info = {
-        "abi": abi,
-        "address": address,
-        "http_provider_url": PROVIDER_URL
+        "abi": config.flex_offer_abi,
+        "address": config.flex_offer_address,
+        "http_provider_url": PROVIDER_URL,
+        "private_key": config.accounts[1]["private_key"]
     }
 
     # Start bidders

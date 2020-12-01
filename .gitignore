@@ -7,3 +7,7 @@ build/
 
 # JavaScript
 node_modules/
+
+
+_chain/
+config/keys.json
