@@ -6,6 +6,7 @@ import detectEthereumProvider from '@metamask/detect-provider';
 const initialState = {
     user: undefined,
     allFlexOffers: {},
+    allFlexOfferBids: {}, // {flexOfferId: [flexOfferBid1, ...]}
     account: '',
     chainId: '',
     netId: 0,
@@ -54,6 +55,22 @@ function reducer(state, action) {
                 }}
         },
 
+
+        addFlexOfferBid: ({flexOfferId, bid}) => {
+            let bid_completed = {
+                author: null,
+                amount: 0,
+                ...bid
+            };
+
+            return {
+                ...state,
+                allFlexOfferBids: {
+                    ...state.allFlexOfferBids,
+                    [[flexOfferId]]: [...state.allFlexOfferBids[flexOfferId] ?? [], bid_completed]
+                }
+            }
+        },
         removeFlexOffer: (flexOfferId) => {
             let flexOffersCopy = state.allFlexOffers;
             delete flexOffersCopy[flexOfferId];
@@ -119,11 +136,26 @@ function Web3Manager() {
         }
 
 
-        // DEBUG
-        let addOffer = () => dispatch("addFlexOffer", { flexOfferId: String(Math.random()), flexOffer: {} });
-        addOffer();
-        addOffer();
-        setInterval(()=>dispatch("addFlexOffer", {flexOfferId: String(Math.random()), flexOffer: {}}), 3000);
+        // DEBUG: Add flex offers at random, with bidders
+        let addFlexOffer = (i) => {
+
+            let id = String(Math.random());
+            let offer_timeout = i * 2000;
+            let bids = [1, 2, 3, 4].forEach((i) => {
+                let bid = {
+                    author: String(Math.random()),
+                    amount: i * 20
+                };
+                let bid_timeout = i*750;
+                let add_bid = () => dispatch("addFlexOfferBid", {flexOfferId: id, bid: bid});
+                setTimeout(add_bid, offer_timeout + bid_timeout);
+            })
+
+            // Dispatch
+            dispatch("addFlexOffer", {flexOfferId:id, flexOffer: {}});
+        }
+
+        [1, 2, 3, 4].forEach(addFlexOffer)
     }
 
     const detectProvider = async () => {
