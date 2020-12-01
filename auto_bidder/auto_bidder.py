@@ -63,7 +63,7 @@ class AutoBidder(web3_contract.AsyncContract):
         flex_offer_bid = flex_offer[-1]
 
         # Check if bid was made by self
-        if self.account_address == new_owner:
+        if self.account.address == new_owner:
             self.logger.debug(f"Not countering bid: is my bid")
             return
         
