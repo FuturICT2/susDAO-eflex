@@ -1,4 +1,5 @@
 import web3_contract, json, random, time
+from pprint import pp
 
 
 
@@ -6,29 +7,27 @@ import web3_contract, json, random, time
 class AutoOfferer(web3_contract.AsyncContract):
     def run(self):
         while True:
-            new_offer_nonce = random.randint(500000, 1000000)
-            self.createFlexOffer(new_offer_nonce)
-            print(f"Created offer with nonce {new_offer_nonce}")
-            time.sleep(5)
-
+            now = int(time.time())
+            receipt = self.mint_flex_offer_to(
+                100, # power
+                5, # duration
+                now+910, # start
+                now+920) # end
+            logs = self.contract.events.flexOfferMinted().processReceipt(receipt)
+            print("Created new flex offer with id", hex(logs[0]['args']['flexOfferId']))
+            time.sleep(2)
 
 
 if __name__ == "__main__":
-    PROVIDER_URL = "http://localhost:7545"
-    ABI_PATH = "../config/FlexSimAbi.json"
-    DEPLOY_PATH = "../config/FlexSimDeploy.json"
-
-    with open(ABI_PATH) as f:
-        abi = json.load(f)["abi"]
-
-    with open(DEPLOY_PATH) as f:
-        address = json.load(f)["address"]
+    from config import config
     
     flex_manager_contract_info = {
-        "abi": abi,
-        "address": address,
-        "http_provider_url": PROVIDER_URL
+        "abi": config.flex_offer_abi,
+        "address": config.flex_offer_address,
+        "http_provider_url": config.provider_url,
+        "private_key": config.accounts[0]["private_key"]
     }
 
     ao = AutoOfferer(**flex_manager_contract_info)
     ao.run()
+    #ao.start_all()

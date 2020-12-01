@@ -1,5 +1,59 @@
 # susDAO-eflex
 
+## Setup
+
+### Dependencies
+
+#### TODO: Test this
+```bash
+# Setup yarn repo
+curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+sudo apt update
+
+# Install programs
+sudo apt install yarn python3 nodejs
+# Install truffle
+yarn global add truffle ganache-cli
+
+# Install autobidder deps
+python3 -m pip install -r auto_bidder/requirements.txt
+
+# Install contract deps
+cd main_contract
+yarn install
+cd ..
+
+# Install web_frontend deps
+cd web_frontend
+yarn install
+cd ..
+```
+### Start working
+Each of these commands has to be run ina different shell instance (except for deploy_contract):
+
+* Start ganache:
+    
+        make ganache
+
+* Deploy contracts
+
+        make deploy_contract
+
+* Start the auto bidder (optional, simulates bidders on market)
+
+        make autobidder
+
+* Start the auto offerer (optional, simulates offerers on market)
+
+        make autoofferer
+
+* Start the web frontend
+
+        make web_frontend
+
+The web frontend should open a browser window automatically once ready.
+
+
 ## Token Design and implementation
 There are two tokens that are created for the flexwise implementation:
 1. FlexOffer
