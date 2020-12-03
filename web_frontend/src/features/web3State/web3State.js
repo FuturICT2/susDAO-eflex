@@ -33,7 +33,7 @@ function reducer(state, action) {
                 "0x5": "Goerli",
                 "0x2a": "Kovan"
             }
-            let networkName = networkNames[chainId] || "unknown";
+            let networkName = networkNames[chainId] || "localhost";
             return { ...state, chainId: chainId, networkName: networkName }
         },
 
@@ -55,7 +55,6 @@ function reducer(state, action) {
                 }}
         },
 
-
         addFlexOfferBid: ({flexOfferId, bid}) => {
             let bid_completed = {
                 author: null,
@@ -63,13 +62,21 @@ function reducer(state, action) {
                 ...bid
             };
 
-            return {
-                ...state,
-                allFlexOfferBids: {
-                    ...state.allFlexOfferBids,
-                    [[flexOfferId]]: [...state.allFlexOfferBids[flexOfferId] ?? [], bid_completed]
-                }
+            let searchFun = ({author, amount}) => (author===bid.author && amount===bid.amount);
+            let bidsSoFar = state.allFlexOfferBids[flexOfferId] ?? [];
+            if(bidsSoFar.find(searchFun)){
+                return state;
+            } else {
+                return {
+                    ...state,
+                    allFlexOfferBids: {
+                        ...state.allFlexOfferBids,
+                        [[flexOfferId]]: [...state.allFlexOfferBids[flexOfferId] ?? [], bid_completed]
+                    }
             }
+            }
+
+            
         },
         removeFlexOffer: (flexOfferId) => {
             let flexOffersCopy = state.allFlexOffers;
@@ -96,8 +103,7 @@ function Web3Manager() {
         let contractData = FlexOffer.networks[netId];
         // console.log(netId);
         let flexOffer = new web3.eth.Contract(FlexOffer.abi, contractData.address);
-
-
+        console.log(provider);
         // Set initial data
         dispatch('update', {
             netId: netId,
@@ -106,11 +112,55 @@ function Web3Manager() {
             },
             connected: provider.isConnected()
         });
+        
+        let getFlexOfferData = async (flexOfferId) => {
+            return flexOffer.methods.flex_offers_mapping(flexOfferId).call();
+        }
 
-        // (state, action) => state
+        // Set conract and callbacks
+        dispatch('setContract',flexOffer);
+        let contractEventCallbacks = {
+            flexOfferMinted: async (res) => {
+                console.log("Hello");
+                let flexOfferId = res.returnValues[0];
+                let flexOfferData = await getFlexOfferData(flexOfferId);
+                dispatch('addFlexOffer', {flexOfferId: flexOfferId, flexOffer: flexOfferData});
+            },
+
+            flexOfferBidSuccess: async (res) => {
+                let {flexOfferId, new_owner} = res.returnValues;
+                let flexOfferData = await getFlexOfferData(flexOfferId);
+
+                dispatch("addFlexOfferBid", {flexOfferId: flexOfferId, bid: {author: new_owner, amount: flexOfferData.curr_bid}});
+            },
+
+
+        }
+
+        /*Object.keys(contractEventCallbacks).forEach((key) => {
+            let fun = contractEventCallbacks[key];
+            let fun_with_err = (error, res) => {console.log("Hello");
+                if(error){throw error}fun(res);}
+            flexOffer.events[key](fun_with_err);
+        });*/
+
+        let f = async () =>{
+            console.log("Calling...")
+            console.log(await flexOffer.methods.totalSupply().call());
+        }
+        f();
+        
+
+        flexOffer.events.flexOfferMinted((res, err) => {
+                console.log("Hello");
+                //let flexOfferId = res.returnValues[0];
+                //let flexOfferData = await getFlexOfferData(flexOfferId);
+                //dispatch('addFlexOffer', {flexOfferId: flexOfferId, flexOffer: flexOfferData});
+            });
+
+
 
         dispatch('setChainId', chainId);
-        dispatch('setContract',flexOffer);
         var eventCallbacks = {
             accountsChanged: (accounts) => {
                 dispatch('updateUser', {address: accounts[0]});
@@ -138,29 +188,6 @@ function Web3Manager() {
         for (var evName in eventCallbacks) {
             provider.on(evName, eventCallbacks[evName]);
         }
-
-
-
-        // DEBUG: Add flex offers at random, with bidders
-        let addFlexOffer = (i) => {
-
-            let id = String(Math.random());
-            let offer_timeout = i * 2000;
-            let bids = [1, 2, 3, 4].forEach((i) => {
-                let bid = {
-                    author: String(Math.random()),
-                    amount: i * 20
-                };
-                let bid_timeout = i*750;
-                let add_bid = () => dispatch("addFlexOfferBid", {flexOfferId: id, bid: bid});
-                setTimeout(add_bid, offer_timeout + bid_timeout);
-            })
-
-            // Dispatch
-            dispatch("addFlexOffer", {flexOfferId:id, flexOffer: {}});
-        }
-
-        [1, 2, 3, 4].forEach(addFlexOffer)
     }
 
     const detectProvider = async () => {
@@ -178,7 +205,7 @@ function Web3Manager() {
     }
 
 
-    useEffect(() => { detectProvider() }, []);
+    useEffect(() => {detectProvider()}, []);
 
     return (<></>);
 }

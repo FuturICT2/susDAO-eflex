@@ -171,6 +171,7 @@ function OfferView() {
     }
 
     const createOffer = ()=>{
+        console.log("Address: ", contract.options.address)
       let pass = false;
       if (!offer.power){
         window.alert('Please provide the power of your machine')
