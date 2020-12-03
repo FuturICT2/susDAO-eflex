@@ -1,5 +1,5 @@
 
-import web3_contract, asyncio, random, logging, pprint
+import web3_contract, asyncio, random, logging, pprint, time
 
 
 
@@ -50,6 +50,7 @@ class AutoBidder(web3_contract.AsyncContract):
     
 
     async def on_flexOfferMinted(self, flexOfferId, og_owner):
+        if(random.choice([0, 1]) == 1): return
         """ Makes an initial bid. Expected to be called once per offer. """
         first_bid = min(random.randint(*self.config["first_bid_range"]),
                         self.get_bid_bound(flexOfferId))
@@ -58,23 +59,18 @@ class AutoBidder(web3_contract.AsyncContract):
         self.logger.info(f"Created first bid for {flexOfferId}: Ξ{first_bid}, bound: Ξ{self.get_bid_bound(flexOfferId)}")
     
     async def on_flexOfferBidSuccess(self, flexOfferId, new_owner):
+        time.sleep(2)
         # Extract bid amount:
         flex_offer = self.contract.functions.flex_offers_mapping(flexOfferId).call()
         flex_offer_bid = flex_offer[-1]
-
-        # Check if bid was made by self
-        if self.account.address == new_owner:
-            self.logger.debug(f"Not countering bid: is my bid")
-            return
-        
         # Check if self already bid better
-        if self.get_last_bid(flexOfferId) > flex_offer_bid:
-            self.logger.debug(f"Not countering bid: already countered with better bid")
+        if self.get_last_bid(flexOfferId) >= flex_offer_bid:
+            self.logger.debug(f"Not countering bid {flexOfferId}: already countered with better bid")
             return
         
         # Check if bid surpassed own bound for this flex-offer
         if self.get_bid_bound(flexOfferId) < flex_offer_bid:
-            self.logger.info(f"Not countering bid: bid surpassed own bound")
+            self.logger.info(f"Not countering bid {flexOfferId}: bid surpassed own bound")
             return
         # Otherwise: counter with higher bid
         else:
