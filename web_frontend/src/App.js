@@ -33,11 +33,11 @@ function App() {
     buy: <BuyView />
 
   }
-  let [currentView, setView] = useState("buy");
+  let [currentView, setView] = useState("market");
   return (<Layout style={{ minHeight: '100vh' }}>
     <Sider collapsible>
       <img src="eflex.jpg" className="logo" alt="eflex-logo" />
-      <Menu theme="dark" defaultSelectedKeys={["1"]} mode="inline">
+      <Menu theme="dark" defaultSelectedKeys={["3"]} mode="inline">
         <Menu.Item key="1" icon={<BorderOuterOutlined />} onClick={()=>setView("buy")}>
           Buyer
         </Menu.Item>

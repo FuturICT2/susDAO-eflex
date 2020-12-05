@@ -2,6 +2,7 @@ import { createContext, useEffect, useContext } from 'react';
 import Web3 from 'web3';
 import detectEthereumProvider from '@metamask/detect-provider';
 import FlexOffer from '../../artifacts/FlexOffer.json';
+import FlexPoint from '../../artifacts/FlexPoint.json';
 
 const initialState = {
     user: undefined,
@@ -12,8 +13,13 @@ const initialState = {
     netId: 0,
     networkName: null,
     contract: '',
-    connected: false
+    connected: false,
+    totalOffers: -1,
+    totalPoints: -1,
+    currentBlockNumber: 0,
+    lastUpdateTimestamp: 0,
 };
+
 
 function reducer(state, action) {
     let reducers = {
@@ -58,22 +64,19 @@ function reducer(state, action) {
         addFlexOfferBid: ({flexOfferId, bid}) => {
             let bid_completed = {
                 author: null,
-                amount: 0,
+                amount: -1,
                 ...bid
             };
 
-            let searchFun = ({author, amount}) => (author===bid.author && amount===bid.amount);
             let bidsSoFar = state.allFlexOfferBids[flexOfferId] ?? [];
-            if(bidsSoFar.find(searchFun)){
-                return state;
-            } else {
-                return {
-                    ...state,
-                    allFlexOfferBids: {
-                        ...state.allFlexOfferBids,
-                        [[flexOfferId]]: [...state.allFlexOfferBids[flexOfferId] ?? [], bid_completed]
-                    }
-            }
+            // Make sure not to add duplicate bids
+            let bidlist_completed = [...state.allFlexOfferBids[flexOfferId] ?? [], bid_completed]
+            return {
+                ...state,
+                allFlexOfferBids: {
+                    ...state.allFlexOfferBids,
+                    [[flexOfferId]]: bidlist_completed
+                }
             }
 
             
@@ -88,7 +91,7 @@ function reducer(state, action) {
           return { ...state, contract: contract }
         }
     }
-    console.log("Action emitted: ", action.type);
+    console.log("Web3State || Action emitted: ", action.type);
     let reducer = reducers[action.type] || (() => { console.error("unknown action type '" + String(action.type) + "'"); return state });
     return reducer(action.payload);
 }
@@ -103,7 +106,7 @@ function Web3Manager() {
         let contractData = FlexOffer.networks[netId];
         // console.log(netId);
         let flexOffer = new web3.eth.Contract(FlexOffer.abi, contractData.address);
-        console.log(provider);
+        console.log("Addr: ", contractData.address, "Other", await flexOffer.methods.FP().call());
         // Set initial data
         dispatch('update', {
             netId: netId,
@@ -121,44 +124,63 @@ function Web3Manager() {
         dispatch('setContract',flexOffer);
         let contractEventCallbacks = {
             flexOfferMinted: async (res) => {
-                console.log("Hello");
                 let flexOfferId = res.returnValues[0];
                 let flexOfferData = await getFlexOfferData(flexOfferId);
                 dispatch('addFlexOffer', {flexOfferId: flexOfferId, flexOffer: flexOfferData});
             },
 
             flexOfferBidSuccess: async (res) => {
-                let {flexOfferId, new_owner} = res.returnValues;
-                let flexOfferData = await getFlexOfferData(flexOfferId);
-
-                dispatch("addFlexOfferBid", {flexOfferId: flexOfferId, bid: {author: new_owner, amount: flexOfferData.curr_bid}});
+                let {flexOfferId, new_owner, bid_amount} = res.returnValues;
+                dispatch("addFlexOfferBid", {flexOfferId: flexOfferId, bid: {author: new_owner, amount: bid_amount}});
             },
 
 
         }
 
-        /*Object.keys(contractEventCallbacks).forEach((key) => {
-            let fun = contractEventCallbacks[key];
-            let fun_with_err = (error, res) => {console.log("Hello");
-                if(error){throw error}fun(res);}
-            flexOffer.events[key](fun_with_err);
-        });*/
+        let flexPoints = new web3.eth.Contract(FlexPoint.abi, (await flexOffer.methods.FP().call()));
+        console.log(flexPoints.options.address);
 
-        let f = async () =>{
-            console.log("Calling...")
-            console.log(await flexOffer.methods.totalSupply().call());
-        }
-        f();
+        // Update state from time to time
+        let lastBlockNumber = await web3.eth.getBlockNumber() - 100;
+
         
+        let updateLoop = async () => {
+            // Sleep function taken from SO
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            while(true){
+                // Update current block Number (+ 1 bc getPastEvents is inclusive)
+                let currentBlockNumber = await web3.eth.getBlockNumber() + 1;
+                // Fetch all events since last update
+                let newEvents = lastBlockNumber == currentBlockNumber ? [] : await flexOffer.getPastEvents("allEvents", {fromBlock: lastBlockNumber});
+                // Update block number
+                lastBlockNumber = currentBlockNumber 
+                // Dispatch all event callbacks
+                let futures = newEvents.map(event => {
+                    console.log("Dispatching event call back for event: ", event.event);
+                    let callback = contractEventCallbacks[event.event] ?? (async () => {});
+                    return callback(event);
+                });
+                
+                // Update all statistic fields
+                dispatch("update", {
+                    totalOffers: (await flexOffer.methods.totalSupply().call()),
+                    totalPoints: (await flexPoints.methods.totalSupply().call()),
+                    totalEth: (await web3.eth.getBalance(flexOffer.options.address)),
+                    currentBlockNumber: currentBlockNumber,
+                    lastUpdateTimestamp: Math.floor(Date.now() / 1000)
+                });
 
-        flexOffer.events.flexOfferMinted((res, err) => {
-                console.log("Hello");
-                //let flexOfferId = res.returnValues[0];
-                //let flexOfferData = await getFlexOfferData(flexOfferId);
-                //dispatch('addFlexOffer', {flexOfferId: flexOfferId, flexOffer: flexOfferData});
-            });
+                // Await all event callbacks
+                await Promise.all(futures);
+                
+                await sleep(1000);
+            }
+        };
 
-
+        // Start update Loop
+        updateLoop();
 
         dispatch('setChainId', chainId);
         var eventCallbacks = {
