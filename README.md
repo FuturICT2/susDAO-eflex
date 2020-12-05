@@ -12,7 +12,7 @@ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/source
 sudo apt update
 
 # Install programs
-sudo apt install yarn python3 nodejs
+sudo apt install yarn python3 nodejs python3-pip
 # Install truffle
 yarn global add truffle ganache-cli
 
