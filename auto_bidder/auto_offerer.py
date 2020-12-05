@@ -23,7 +23,7 @@ if __name__ == "__main__":
         "abi": config.flex_offer_abi,
         "address": config.flex_offer_address,
         "http_provider_url": config.provider_url,
-        "private_key": config.accounts[0    ]["private_key"]
+        "private_key": config.accounts[2]["private_key"]
     }
 
     ao = AutoOfferer(**flex_manager_contract_info)

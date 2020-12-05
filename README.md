@@ -2,7 +2,7 @@
 
 ## Setup
 
-### Dependencies
+First, install dependencies:
 
 #### TODO: Test this
 ```bash
@@ -28,8 +28,9 @@ cd web_frontend
 yarn install
 cd ..
 ```
-### Start working
-Each of these commands has to be run ina different shell instance (except for deploy_contract):
+There are multiple aspects to this project. For one, there's the smart contract itself, but there's also a webpage, run by a node server, and some market participant simulators, written in python.
+
+A makefile is provided to make setup as easy as possible. Apart from the contract deployment command, none of these commands return, so  they have to be run in a different shell instance each:
 
 * Start ganache:
     
@@ -37,7 +38,7 @@ Each of these commands has to be run ina different shell instance (except for de
 
 * Deploy contracts
 
-        make deploy_contract
+        make setup_contract
 
 * Start the auto bidder (optional, simulates bidders on market)
 
@@ -47,11 +48,18 @@ Each of these commands has to be run ina different shell instance (except for de
 
         make autoofferer
 
-* Start the web frontend
+* Start the web frontend (optional, provides a visual overview over the contract, and ways to interact with it)
 
         make web_frontend
 
 The web frontend should open a browser window automatically once ready.
+
+
+### Using the web frontend
+
+To use the app, you must connect to the [Metamask](https://metamask.io/) extension. 
+
+Some of the actions require an account containing Ethereum. The makefile is setup such that ganache generates a set of accounts with 100 ETH each, and stores them in the file `config/keys.json`. To avoid taking on the same identity as some of the simulated market participants, only the first account given by this file should be taken on with Metamask.
 
 
 ## Token Design and implementation
