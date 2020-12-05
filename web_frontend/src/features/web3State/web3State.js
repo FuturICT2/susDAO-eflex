@@ -2,9 +2,11 @@ import { createContext, useEffect, useContext } from 'react';
 import Web3 from 'web3';
 import detectEthereumProvider from '@metamask/detect-provider';
 import FlexOffer from '../../artifacts/FlexOffer.json';
+import FlexPoint from '../../artifacts/FlexPoint.json';
 
 const initialState = {
     user: undefined,
+    web3: '',
     allFlexOffers: {},
     allFlexOfferBids: {}, // {flexOfferId: [flexOfferBid1, ...]}
     account: '',
@@ -12,6 +14,7 @@ const initialState = {
     netId: 0,
     networkName: null,
     contract: '',
+    fpcontract:'',
     connected: false
 };
 
@@ -20,10 +23,12 @@ function reducer(state, action) {
         update: (update) => {
             return { ...state, ...update };
         },
-
         updateUser: (update) => {
             /* Updates only the "user" field */
             return {...state, user: {...state.user, ...update}};
+        },
+        updateWeb3:(web3)=>{
+          return {...state, web3:web3}
         },
         setChainId: (chainId) => {
             let networkNames = {
@@ -79,6 +84,9 @@ function reducer(state, action) {
 
         setContract:  (contract)=>{
           return { ...state, contract: contract }
+        },
+        setFpContract:  (contract)=>{
+          return { ...state, fpcontract: contract }
         }
     }
     console.log("Action emitted: ", action.type);
@@ -97,7 +105,6 @@ function Web3Manager() {
         // console.log(netId);
         let flexOffer = new web3.eth.Contract(FlexOffer.abi, contractData.address);
 
-
         // Set initial data
         dispatch('update', {
             netId: netId,
@@ -108,9 +115,15 @@ function Web3Manager() {
         });
 
         // (state, action) => state
-
+        dispatch('updateWeb3',web3);
         dispatch('setChainId', chainId);
         dispatch('setContract',flexOffer);
+        if(accountAddress && flexOffer){
+          flexOffer.methods.FP().call().then((fpAddress)=>{
+            let fpContract = new web3.eth.Contract(FlexPoint.abi, fpAddress);
+            dispatch('setFpContract',fpContract);
+          });
+        }
         var eventCallbacks = {
             accountsChanged: (accounts) => {
                 dispatch('updateUser', {address: accounts[0]});
@@ -177,9 +190,7 @@ function Web3Manager() {
         }
     }
 
-
     useEffect(() => { detectProvider() }, []);
-
     return (<></>);
 }
 

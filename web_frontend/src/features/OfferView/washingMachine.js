@@ -86,7 +86,7 @@ function WashMachine() {
         }
       )
     }
-  }, [web3state.user, web3state.contract]);
+  }, [web3state.user?.address, web3state.contract]);
 
   if(loggedin){
   return (<div className="wrapper laundromat">
