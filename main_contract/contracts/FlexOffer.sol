@@ -51,7 +51,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
 
     // event flex_offer_bid_failed(uint256 indexed flexTokenId);
 
-    event flex_offer_burned (uint256 indexed flexOfferId);
+    // event flex_offer_burned (uint256 indexed flexOfferId);
 
     constructor() ERC721("Flex_Offer","FO") public {
         memory_string = "heyo";
@@ -132,11 +132,11 @@ contract FlexOffer is ERC721, ERC721Burnable{
     // the activation of the flex offer also burns the flex offer
     // Need to add the reward mechanism here 
     function ActivateFlexOffer(uint256 flexOfferId)public{
-        require(_msgSender() == ownerOf(flexOfferId));
+        require(_msgSender() == ownerOf(flexOfferId),'Only owner of flex offer can activate');
         // can only activate after start time
-        // require(block.timestamp > flex_offers_mapping[flexOfferId].start_time);
+        require(block.timestamp > flex_offers_mapping[flexOfferId].start_time,'Start time not yet reached');
         // Must be activated before the end time - duration requirement
-        // require(block.timestamp < flex_offers_mapping[flexOfferId].end_time-flex_offers_mapping[flexOfferId].duration);
+        require(block.timestamp < flex_offers_mapping[flexOfferId].end_time-flex_offers_mapping[flexOfferId].duration,'End time passed');
         uint256 flexPointCalc = CalFlexPointIssue(flexOfferId);
         FP.IssueFlexPoint( flex_offers_mapping[flexOfferId].og_owner, flexPointCalc);
         _burn(flexOfferId);
@@ -150,12 +150,13 @@ contract FlexOffer is ERC721, ERC721Burnable{
     // Note: This means that the owner cannot terminate the flex offer on his own
     // We can add this functionality later
     function EndTimeActivate(uint256 flexOfferId) public {
-        require (_msgSender() == flex_offers_mapping[flexOfferId].og_owner);
-        require (block.timestamp > (flex_offers_mapping[flexOfferId].end_time - flex_offers_mapping[flexOfferId].duration));
+        require (_msgSender() == flex_offers_mapping[flexOfferId].og_owner,'account not original owner');
+        require (block.timestamp > (flex_offers_mapping[flexOfferId].end_time - flex_offers_mapping[flexOfferId].duration),'end time for sold offer not yet pass');
         uint256 flexPointCalc = CalFlexPointIssue(flexOfferId);
         FP.IssueFlexPoint( flex_offers_mapping[flexOfferId].og_owner, flexPointCalc);
         _burn(flexOfferId);
-        emit flex_offer_burned (flexOfferId);
+        emit flexOfferActivation(flexOfferId ,flexPointCalc, _msgSender());
+        // emit flex_offer_burned (flexOfferId);
     }
 
 
