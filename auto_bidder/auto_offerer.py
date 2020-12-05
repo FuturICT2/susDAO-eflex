@@ -8,11 +8,11 @@ class AutoOfferer(web3_contract.AsyncContract):
             receipt = self.mint_flex_offer_to(
                 100, # power
                 5, # duration
-                now+910, # start
-                now+920) # end
+                now+70, # start
+                now+90) # end
             print("Creation transaction posted...")
             logs = self.contract.events.flexOfferMinted().processReceipt(receipt, errors = web3.logs.DISCARD)
-            print("Created new flex offer with id", hex(logs[0]['args']['flexOfferId']))
+            print("Created new flex offer with id", logs[0]['args']['flexOfferId'])
             time.sleep(10)
 
 

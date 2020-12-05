@@ -39,3 +39,9 @@ class Config:
 
 
 config = Config()
+
+
+if __name__ == "__main__":
+    import pprint
+
+    pprint.pprint(config.__dict__)
