@@ -8,7 +8,7 @@ setup_auto_bidder: .FORCE
 	cd auto_bidder; python3 -m pip install -r requirements.txt
 
 setup_contract: .FORCE
-	cd main_contract; yarn install; truffle deploy
+	cd main_contract; yarn install; truffle deploy --reset
 
 autobidder: .FORCE
 	cd auto_bidder; python3 auto_bidder.py
