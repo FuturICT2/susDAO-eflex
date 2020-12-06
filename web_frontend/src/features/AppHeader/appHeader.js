@@ -51,18 +51,7 @@ function AppHeader() {
           if (!error){
             let flex_token_id = result.returnValues[0];
             updateRate();
-            if(web3state.user.address){
-              web3state.contract.methods.GetMyTotMintedFlexOffers(web3state.user.address).call().then(
-                (newNfp)=>{dispatch('updateUser', {userFlexPoints:newNfp});}
-              )
-            }
-          }
-        });
-        web3state.contract.events.flexOfferActivation(function(error, result){
-          if (!error){
-            let flex_token_id = result.returnValues[0];
-            updateRate();
-            if(web3state.user.address){
+            if(web3state.user?.address){
               web3state.contract.methods.GetMyTotMintedFlexOffers(web3state.user.address).call().then(
                 (newNfp)=>{dispatch('updateUser', {userFlexPoints:newNfp});}
               )

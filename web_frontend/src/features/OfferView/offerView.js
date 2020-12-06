@@ -1,4 +1,4 @@
-import React, { useContext, useState , useReducer, useEffect} from 'react';
+import React, { useContext, useState , useReducer, useEffect, useRef} from 'react';
 import moment from 'moment';
 import 'antd/dist/antd.css';
 import {
@@ -22,6 +22,8 @@ import {WashMachine} from './washingMachine';
 
 const { Title } = Typography;
 const { Countdown } = Statistic;
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 const initialOffer = {
   power: null,
@@ -67,6 +69,7 @@ const status2 = 'in bidding';
 const status3 = 'accomplished';
 const status4 = 'manually activated';
 const status5 = 'to be manually activated'
+const status6 = 'running'
 
 const timeFormat = "YYYY-MM-DD HH:mm";
 
@@ -77,12 +80,21 @@ function OfferView() {
     const [offer,offerdispatch] = useReducer(reducer,initialOffer);
     const setOffer = (type, payload) => {offerdispatch({type:type, payload:payload})};
     // flex offers of the user
-    const [currentOffers,updateOffers] = useState([]);
+    const [currentOffers,_updateOffers] = useState();
+    // update listen's state variable
+    const myOfferRef = useRef(currentOffers);
+    const updateOffers = (data) => {
+      myOfferRef.current = data;
+      _updateOffers(data);
+    };
+
     // either connected or not
     let loggedin = (web3state.user?.address && contract);
+    let gotOffers = Array.isArray(currentOffers);
+
     // time buffer
     const tfinminutes = 1;
-    const tfend = 5;
+    const tfend = 0;
     // read flexoffers from the block chain
     const getNewOffer = async (flex_token_id)=>{
       let offerinfo = await contract.methods.flex_offers_mapping(flex_token_id).call();
@@ -90,7 +102,7 @@ function OfferView() {
       if (!offerinfo[5]){
         status = status2;
       }
-      if(moment.unix(offerinfo[4]).subtract(tfend, "minutes") <moment()){
+      if(moment.unix(offerinfo[4]).subtract(tfend*60+offerinfo[2], "seconds") <moment()){
         status = status5;
       }
       let bidaddress = 'NA';
@@ -105,38 +117,113 @@ function OfferView() {
       let offerData = {
         offerId: flex_token_id,
         power: offerinfo[1]/1000+' kW',
+        durationInSecond: offerinfo[2],
         duration: hours+' h '+minutes+' m',
         start_time: moment.unix(offerinfo[3]).format(timeFormat),
         end_time: moment.unix(offerinfo[4]).format(timeFormat),
         status: status,
         bidprice: offerinfo[5],
         bidaddress: bidaddress,
+        activateTime: '',
       };
       return offerData;
     }
-    useEffect(() => {
-      const init = async () => {
-        if(loggedin){
-          const account = web3state.user.address;
-          const nflex = await contract.methods.GetMyTotMintedFlexOffers(account).call();
-          let offerDataAll = [];
-          for (let i = 0; i < nflex; i++) {
-            let flex_token_id = await contract.methods.GetMyFlexOffer(account,i).call();
-            let offerData = await getNewOffer(flex_token_id);
-            offerDataAll.unshift(offerData);
-          }
-          updateOffers(offerDataAll);
-        }else{
-          updateOffers([]);
-        }
-      }
-  init();
-}, [web3state.user?.address, web3state.contract]);
 
-    function disabledDate(current) {
+    const init = async () => {
+      if(loggedin){
+        const account = web3state.user.address;
+        const nflex = await contract.methods.GetMyTotMintedFlexOffers(account).call();
+        let offerDataAll = [];
+        for (let i = 0; i < nflex; i++) {
+          let flex_token_id = await contract.methods.GetMyFlexOffer(account,i).call();
+          let offerData = await getNewOffer(flex_token_id);
+          offerDataAll.unshift(offerData);
+        }
+        updateOffers(offerDataAll);
+      }else{
+        updateOffers([]);
+      }
+    }
+// console.log(currentOffers);
+    // listen to events
+    const listenEvent =()=>{
+      // new flexoffers
+      contract.events.flexOfferMinted(function(error, result){
+        if (!error){
+          let flex_token_id = result.returnValues[0];
+          console.log(web3state.user?.address);
+          contract.methods.flex_offers_mapping(flex_token_id).call().then( (offerinfo)=>{
+            if (web3state.user.address.toUpperCase()===offerinfo[0].toUpperCase()){
+              let newOffers = myOfferRef.current.slice();
+              getNewOffer(flex_token_id).then((offerData)=>{
+                newOffers.unshift(offerData);
+                updateOffers(newOffers);
+                contract.methods.GetMyTotMintedFlexOffers(web3state.user.address).call().then(
+                  (newNfo)=>{ dispatch('updateUser', {totalFlexOffers:newNfo}) } )
+              });
+            }
+          })
+        }else{
+          console.log(error);
+        }
+      });
+
+    // new bidding success
+      contract.events.flexOfferBidSuccess(function(error, result){
+        if (!error){
+          let flex_token_id = result.returnValues[0];
+          let index = currentOffers.findIndex(offer => offer.offerId ===flex_token_id);
+          if(index){
+            let newOffers = myOfferRef.current.slice();
+            getNewOffer(web3state.user.address,index).then((offer)=>{
+              newOffers[index] = offer;
+              updateOffers(newOffers);
+            })
+          }
+        }else{
+          console.log(error);
+        }
+      });
+
+    //  activate offers
+      contract.events.flexOfferActivation(
+        function(error, result){
+          const offerId = result.returnValues[0];
+          contract.methods.flex_offers_mapping(offerId).call().then((offerInfo)=>{
+            if(offerInfo[0].toUpperCase()===web3state.user.address.toUpperCase()){
+              let newOffers=myOfferRef.current.slice();
+              let index = newOffers.findIndex(offer => offer.offerId ===offerId);
+              dispatch('updateUser', {machineOn:true});
+              newOffers[index].status = status6;
+              newOffers[index].activateTime = 'activated at ' + moment().format(timeFormat);
+              updateOffers(newOffers);
+              setTimeout( ()=>{
+                dispatch('updateUser', {machineOn:false});
+                newOffers[index].status = status3;
+                newOffers[index].activateTime = '';
+                updateOffers(newOffers);
+              }, offerInfo[2]*50);
+            }
+          });
+        });
+    }
+
+    useEffect( () => {
+      init();
+    }, [web3state.user?.address, web3state.contract]);
+
+    useEffect( ()=>{
+      if(loggedin&&gotOffers){
+          listenEvent();
+        }
+    },[web3state.user?.address, web3state.contract, gotOffers]);
+
     // Can not select days before today
+    const disabledDate =(current)=>{
     return current < moment().startOf('day');
     }
+
+    // when change date
     const onChangeDate =(value, dateString)=>{
       if (value){
         let mom1 = value[0];
@@ -155,6 +242,8 @@ function OfferView() {
         setOffer('setDuration',[0,0]);
       }
     }
+
+    // Create flexoffer
     const createOffer = ()=>{
       let pass = false;
       if (!offer.power){
@@ -184,48 +273,11 @@ function OfferView() {
       }
     }
 
-    // event listener
-    if(loggedin){
-      // new flexoffers
-      contract.events.flexOfferMinted(function(error, result){
-        if (!error){
-          let flex_token_id = result.returnValues[0];
-          contract.methods.flex_offers_mapping(flex_token_id).call().then( (offerinfo)=>{
-            if (web3state.user.address.toUpperCase()===offerinfo[0].toUpperCase()){
-              getNewOffer(flex_token_id).then((offerData)=>{
-                let newOffers = [...currentOffers];
-                newOffers.unshift(offerData);
-                updateOffers(newOffers);
-                contract.methods.GetMyTotMintedFlexOffers(web3state.user.address).call().then(
-                  (newNfo)=>{ dispatch('updateUser', {totalFlexOffers:newNfo}) } )
-              });
-            }
-          })
-        }else{
-          console.log(error);
-        }
-      });
-      // bidding success
-      contract.events.flexOfferBidSuccess(function(error, result){
-        if (!error){
-          let flex_token_id = result.returnValues[0];
-          let index = currentOffers.findIndex(offer => offer.offerId ===flex_token_id);
-          if(index){
-            let newOffers = [...currentOffers];
-            getNewOffer(web3state.user.address,index).then((offer)=>{
-              newOffers[index] = offer;
-              updateOffers(newOffers);
-            })
-          }
-        }else{
-          console.log(error);
-        }
-      });
-    }
-
+    // when time ends, allow for manual activation
     const renderEndtime = (record)=>{
       if(record.status===status1||record.status===status2){
-        const ddl = moment(record.end_time,timeFormat).subtract(tfend, "minutes").valueOf();
+        const dur = record.durationInSecond;
+        const ddl = moment(record.end_time,timeFormat).subtract(tfend*60+dur, "seconds").valueOf();
         const now = moment();
         let newOffers=[...currentOffers];
         let index = newOffers.findIndex(offer => offer.offerId ===record.offerId);
@@ -253,7 +305,6 @@ function OfferView() {
             }}> Activate </a>
         }
       }else if (record.status===status5){
-        // return <a onClick = {()=>{contract.methods.EndTimeActivate(record.offerId).send({from:web3state.user?.address})}}> activate</a>
         return <a onClick = {()=>{
           contract.methods.EndTimeActivate(record.offerId).send({from:web3state.user?.address}).then(
             ()=>{
@@ -263,11 +314,14 @@ function OfferView() {
               updateOffers(newOffers);}
             )
           }}> Activate </a>
+      }else if (record.status===status6){
+        return <p> {record.activateTime} </p>
       }else{
         return <p> </p>
       }
     };
 
+    // setup table
     const columns = [
       {
         title: 'Offer-ID',
@@ -323,6 +377,18 @@ function OfferView() {
             text: status3,
             value: status3,
           },
+          {
+            text: status4,
+            value: status4,
+          },
+          {
+            text: status5,
+            value: status5,
+          },
+          {
+            text: status6,
+            value: status6,
+          },
         ],
         filterMultiple: false,
         onFilter: (value, record) => record.status.indexOf(value) === 0,
@@ -348,8 +414,7 @@ function OfferView() {
       }
     ]
 
-    const { RangePicker } = DatePicker;
-    const { Option } = Select;
+    // return react components
     return <div>
     <Title level={1}>Offer</Title>
     <WashMachine />
