@@ -15,7 +15,18 @@ import {
     Modal,
     Table,
     Statistic,
+    Tag,
 } from 'antd';
+
+import {
+  CheckCircleOutlined,
+  SyncOutlined,
+  CloseCircleOutlined,
+  ExclamationCircleOutlined,
+  ClockCircleOutlined,
+  MinusCircleOutlined,
+  InfoOutlined,
+} from '@ant-design/icons';
 
 import { Web3Context } from '../web3State/web3State';
 import {WashMachine} from './washingMachine';
@@ -64,13 +75,9 @@ function reducer(state,action){
   return reducer(action.payload);
 }
 
-const status1 = 'wait for bidding';
-const status2 = 'in bidding';
-const status3 = 'accomplished';
-const status4 = 'manually activated';
-const status5 = 'to be manually activated'
-const status6 = 'running'
-
+const statusList = ['wait for bidding','in bidding','to be activated',
+                    'manually activated','running','accomplished'];
+const renStatus = statusList.map((x)=>{return {text:x , value:x } } );
 const timeFormat = "YYYY-MM-DD HH:mm";
 
 function OfferView() {
@@ -80,12 +87,12 @@ function OfferView() {
     const [offer,offerdispatch] = useReducer(reducer,initialOffer);
     const setOffer = (type, payload) => {offerdispatch({type:type, payload:payload})};
     // flex offers of the user
-    const [currentOffers,_updateOffers] = useState();
+    const [currentOffers, updateCurrentOffers] = useState();
     // update listen's state variable
     const myOfferRef = useRef(currentOffers);
     const updateOffers = (data) => {
       myOfferRef.current = data;
-      _updateOffers(data);
+      updateCurrentOffers(data);
     };
 
     // either connected or not
@@ -98,19 +105,19 @@ function OfferView() {
     // read flexoffers from the block chain
     const getNewOffer = async (flex_token_id)=>{
       let offerinfo = await contract.methods.flex_offers_mapping(flex_token_id).call();
-      let status = status1;
+      let status = statusList[0];
       if (!offerinfo[5]){
-        status = status2;
+        status = statusList[1];
       }
       if(moment.unix(offerinfo[4]).subtract(tfend*60+offerinfo[2], "seconds") <moment()){
-        status = status5;
+        status = statusList[2];
       }
       let bidaddress = 'NA';
       try{
         let result = await contract.methods.ownerOf(flex_token_id).call();
         if (!offerinfo[5]){bidaddress = result;}
       }catch(error){
-        status = status3;
+        status = statusList[5];
       }
       let hours = Math.floor(offerinfo[2] / 3600);
       let minutes = Math.floor(offerinfo[2] % 3600 / 60);
@@ -172,7 +179,7 @@ function OfferView() {
       contract.events.flexOfferBidSuccess(function(error, result){
         if (!error){
           let flex_token_id = result.returnValues[0];
-          let index = currentOffers.findIndex(offer => offer.offerId ===flex_token_id);
+          let index = myOfferRef.current.findIndex(offer => offer.offerId ===flex_token_id);
           if(index){
             let newOffers = myOfferRef.current.slice();
             getNewOffer(web3state.user.address,index).then((offer)=>{
@@ -194,24 +201,26 @@ function OfferView() {
               let newOffers=myOfferRef.current.slice();
               let index = newOffers.findIndex(offer => offer.offerId ===offerId);
               dispatch('updateUser', {machineOn:true});
-              newOffers[index].status = status6;
-              newOffers[index].activateTime = 'activated at ' + moment().format(timeFormat);
+              newOffers[index].status = statusList[4];
+              newOffers[index].activateTime = moment().format(timeFormat);
               updateOffers(newOffers);
               setTimeout( ()=>{
                 dispatch('updateUser', {machineOn:false});
-                newOffers[index].status = status3;
+                newOffers[index].status = statusList[5];
                 newOffers[index].activateTime = '';
                 updateOffers(newOffers);
-              }, offerInfo[2]*50);
+              }, offerInfo[2]*200);
             }
           });
         });
     }
-
+console.log(currentOffers);
+    // initialization
     useEffect( () => {
       init();
     }, [web3state.user?.address, web3state.contract]);
 
+    // add event listener
     useEffect( ()=>{
       if(loggedin&&gotOffers){
           listenEvent();
@@ -275,22 +284,25 @@ function OfferView() {
 
     // when time ends, allow for manual activation
     const renderEndtime = (record)=>{
-      if(record.status===status1||record.status===status2){
+      if(record.status===statusList[0]||record.status===statusList[1]){
         const dur = record.durationInSecond;
         const ddl = moment(record.end_time,timeFormat).subtract(tfend*60+dur, "seconds").valueOf();
         const now = moment();
-        let newOffers=[...currentOffers];
+        let newOffers=currentOffers.slice();
         let index = newOffers.findIndex(offer => offer.offerId ===record.offerId);
         if(ddl > now){
-          return <Countdown value={ddl} onFinish = {()=>{
+          return <Countdown valueStyle={{ fontSize: '15px'}} value={ddl} onFinish = {()=>{
             if(window.confirm("Your flexOffer ID:" + record.offerId + " can be manually activated, do you want to activate it now?")){
               contract.methods.EndTimeActivate(record.offerId).send({from:web3state.user?.address}).then(
                 ()=>{
-                  newOffers[index].status = status4;
+                  newOffers[index].status = statusList[3];
                   updateOffers(newOffers);}
+              ).catch(()=>{
+                newOffers[index].status = statusList[2];
+                updateOffers(newOffers);}
               )
             }else{
-              newOffers[index].status = status5;
+              newOffers[index].status = statusList[2];
               updateOffers(newOffers);
             }
           }}
@@ -299,23 +311,21 @@ function OfferView() {
           return <a onClick = {()=>{
             contract.methods.EndTimeActivate(record.offerId).send({from:web3state.user?.address}).then(
               ()=>{
-                newOffers[index].status = status4;
+                newOffers[index].status = statusList[3];
                 updateOffers(newOffers);}
               )
             }}> Activate </a>
         }
-      }else if (record.status===status5){
+      }else if (record.status===statusList[2]){
         return <a onClick = {()=>{
           contract.methods.EndTimeActivate(record.offerId).send({from:web3state.user?.address}).then(
             ()=>{
-              let newOffers=[...currentOffers];
+              let newOffers=currentOffers.slice();
               let index = newOffers.findIndex(offer => offer.offerId ===record.offerId);
-              newOffers[index].status = status4;
+              newOffers[index].status = statusList[3];
               updateOffers(newOffers);}
             )
           }}> Activate </a>
-      }else if (record.status===status6){
-        return <p> {record.activateTime} </p>
       }else{
         return <p> </p>
       }
@@ -364,32 +374,47 @@ function OfferView() {
         key: 'status',
         width: '15%',
         sorter: (a, b) => a.status.length - b.status.length,
-        filters: [
-          {
-            text: status1,
-            value: status1,
-          },
-          {
-            text: status2,
-            value: status2,
-          },
-          {
-            text: status3,
-            value: status3,
-          },
-          {
-            text: status4,
-            value: status4,
-          },
-          {
-            text: status5,
-            value: status5,
-          },
-          {
-            text: status6,
-            value: status6,
-          },
-        ],
+        render:  (_, record) => {
+              let status = record.status;
+              let renderColor = 'volcano';
+              let renderIcon = <ClockCircleOutlined />;
+              switch (status){
+                case statusList[0]:
+                  renderColor = 'cyan';
+                  break;
+                case statusList[1]:
+                  renderColor = 'blue';
+                  break;
+                case statusList[2]:
+                  renderColor = 'red';
+                  renderIcon = <ExclamationCircleOutlined />;
+                  break;
+                case statusList[3]:
+                  renderColor = 'yellow';
+                  break;
+                case statusList[4]:
+                  renderColor = 'magenta';
+                  renderIcon = <SyncOutlined spin />;
+                  break;
+                case statusList[5]:
+                  renderColor = 'success';
+                  renderIcon = <CheckCircleOutlined />;
+                  break;
+                }
+              return (
+                <>
+                <Tag style={{ fontSize: '10px'}} color={renderColor} icon={renderIcon}>
+                {status.toUpperCase()}
+                </Tag>
+                {status===statusList[4] &&
+                  <Tag style={{ fontSize: '10px'}} color={'purple'}>
+                  FROM {record.activateTime}
+                  </Tag> }
+                </>
+              );
+            },
+
+        filters: renStatus,
         filterMultiple: false,
         onFilter: (value, record) => record.status.indexOf(value) === 0,
       },
@@ -408,11 +433,12 @@ function OfferView() {
       },
       {
         title: 'Action',
+        key: 'action',
         render: function(_, record) {
           return renderEndtime(record);
         }
       }
-    ]
+    ];
 
     // return react components
     return <div>
