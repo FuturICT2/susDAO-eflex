@@ -52,7 +52,7 @@ function AppHeader() {
             let flex_token_id = result.returnValues[0];
             updateRate();
             if(web3state.user?.address){
-              web3state.contract.methods.GetMyTotMintedFlexOffers(web3state.user.address).call().then(
+              web3state.fpcontract.methods.balanceOf(web3state.user.address).call().then(
                 (newNfp)=>{dispatch('updateUser', {flexPoints:newNfp});}
               )
             }
