@@ -1,8 +1,8 @@
 import { createContext, useEffect, useContext } from 'react';
 import Web3 from 'web3';
 import detectEthereumProvider from '@metamask/detect-provider';
-import FlexOffer from '../../artifacts/FlexOffer.json';
-import FlexPoint from '../../artifacts/FlexPoint.json';
+import FlexOfferABI from '../../artifacts/FlexOffer.json';
+import FlexPointABI from '../../artifacts/FlexPoint.json';
 
 const initialState = {
     user: undefined,
@@ -101,12 +101,29 @@ function Web3Manager() {
     const initProvider = async (provider, web3) => {
         let chainId = provider.chainId;
         let accountAddress = (await provider.request({ method: 'eth_requestAccounts' }))[0];
-        let netId = await provider.request({ method: 'net_version' });
-        // Contract stuff
-        let contractData = FlexOffer.networks[netId];
-        // console.log(netId);
-        let flexOffer = new web3.eth.Contract(FlexOffer.abi, contractData.address);
-        console.log("Addr: ", contractData.address, "Other", await flexOffer.methods.FP().call());
+        let netId = await provider.request({ method: 'net_version' });  
+        // Setup contract
+        let contractDeploymentInfo = FlexOfferABI.networks[netId];
+        // Check if contract was deployed
+        let raiseContractNotDeployed = () =>{
+            throw Error("Contract not deployed");
+        } 
+        let flexOffer = undefined;
+
+        // Check if config file exists
+        if(contractDeploymentInfo){
+            flexOffer = new web3.eth.Contract(FlexOfferABI.abi, contractDeploymentInfo.address);
+        } else {
+            raiseContractNotDeployed();
+        }
+        
+        // Make example  call to check if config file is up-to-date:
+        await flexOffer.methods.FP().call((error, res) => {
+            if(error){
+                raiseContractNotDeployed();
+            }
+        });
+        console.log("Addr: ", contractDeploymentInfo.address, "Other", await flexOffer.methods.FP().call());
         // Set initial data
         dispatch('update', {
             netId: netId,
@@ -137,7 +154,7 @@ function Web3Manager() {
 
         }
 
-        let flexPoints = new web3.eth.Contract(FlexPoint.abi, (await flexOffer.methods.FP().call()));
+        let flexPoints = new web3.eth.Contract(FlexPointABI.abi, (await flexOffer.methods.FP().call()));
         console.log(flexPoints.options.address);
 
         // Update state from time to time
