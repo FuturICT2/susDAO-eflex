@@ -20,8 +20,7 @@ web_frontend: .FORCE
 	cd web_frontend; yarn start
 
 # Launches ganache in accordance to config/GanacheNetwork.json configuration
-ganache: .FORCE
-	ganache-cli --db _chain/ --account_keys_path config/keys.json --port 8545 --i 5777
-
+ganache: .FORCE 
+	ganache-cli --account_keys_path config/keys.json --port 8545 --i 5777
 
 .FORCE:

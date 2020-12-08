@@ -1,0 +1,196 @@
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+body {
+  background: #e9f2be;
+  font-family: "Nunito", sans-serif;
+}
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  position: relative;
+  height: 80vh;
+  width: 80vw;
+}
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+#machine {
+  display: flex;
+  justify-content: center;
+  height: 350px;
+  width: 350px;
+  background: #a09d98;
+  border-radius: 10px;
+  box-shadow: 5px 5px 50px rgba(0, 0, 0, 0.5);
+  margin-top: 30px;
+  overflow: hidden;
+  position: relative;
+}
+#machine:after {
+  align-self: flex-end;
+  background: #080808;
+  content: '';
+  display: block;
+  height: 100px;
+  width: 100%;
+}
+#machine .door {
+  height: 280px;
+  width: 280px;
+  align-self: center;
+  background: rgba(0, 0, 0, 0.5);
+  border: 8px solid #b8b6b3;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 18px #88847d, 0 0 0 4px black;
+  cursor: pointer;
+  position: absolute;
+  transform-origin: 15px 50%;
+  transition: transform 0.3s ease;
+  z-index: 2;
+}
+#machine .door.open {
+  transform: rotateY(75deg);
+}
+#machine .chamber {
+  height: 265px;
+  width: 265px;
+  align-self: center;
+  background: radial-gradient(circle, #080808 20%, #a09d98 100%);
+  border: 5px solid #080808;
+  border-radius: 50%;
+  overflow: hidden;
+  position: absolute;
+  z-index: 1;
+}
+#machine .chamber.spin {
+  animation-name: rotate;
+  animation-duration: 0.6s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+#machine .controls {
+  align-self: end;
+  border: 3px double white;
+  border-radius: 5px;
+  border-top-right-radius: 0;
+  height: 90px;
+  padding: 1px;
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  width: 60px;
+}
+#machine .controls button {
+  background: #b8b6b3;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  display: block;
+  float: left;
+  font-size: 13px;
+  font-weight: bold;
+  margin: 2px;
+  padding: 1px 3px;
+}
+#machine .controls button#open {
+  width: calc(100% - 4px);
+}
+#machine .controls .display {
+  background: #33D5FF;
+  display: inline-block;
+  font-size: 9px;
+  height: 15px;
+  text-align: center;
+  font-weight: bold;
+  margin-top: 8px;
+  width: 75%;
+  margin: 6px;
+}
+#machine .controls .display.on {
+  background: #FF8C33;
+  animation: blinker 0.6s linear infinite;
+}
+@keyframes blinker {
+  80% { opacity: 0; }
+}
+.clothing {
+  background: #212159;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
+  border-top-right-radius: 50%;
+  border-top-left-radius: 50%;
+  bottom: 0;
+  cursor: pointer;
+  right: 25%;
+  display: block;
+  height: 50px;
+  width: 150px;
+  position: absolute;
+  z-index: 2;
+}
+.clothing.jeans {
+  background: #b98035;
+  height: 80px;
+  right: 30%;
+}
+.clothing.hoodie {
+  background: #204046;
+  height: 40px;
+  right: 35%;
+}
+.chamber .clothing.hoodie {
+  right: unset;
+}
+.water .crescent {
+  height: 265px;
+  width: 265px;
+  border-radius: 50%;
+  box-shadow: inset 0 0px #007acc;
+  transition: box-shadow 2s ease;
+  z-index: 3;
+}
+.spin .water .crescent {
+  animation-name: rotate;
+  animation-direction: reverse;
+  animation-duration: 0.6s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  box-shadow: inset 0 -50px #007acc;
+}
+.water .crescent:after {
+  height: 15px;
+  width: 15px;
+  background: #007acc;
+  bottom: 0px;
+  border-radius: 50%;
+  content: '';
+  display: none;
+  left: 30%;
+  position: absolute;
+}
+@keyframes droplet {
+  from {
+    bottom: 0;
+  }
+  to {
+    bottom: 40%;
+  }
+}
+.spin .water .crescent:after {
+  animation-name: droplet;
+  animation-direction: alternate;
+  animation-duration: 0.3s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  display: block;
+}
