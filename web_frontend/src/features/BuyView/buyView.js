@@ -1,23 +1,13 @@
-import React, { useContext, useMemo, useReducer } from 'react';
-
-import 'antd/dist/antd.css';
 import {
-    Typography,
-    InputNumber,
-    Input, Form, Button, Row, Col, Empty, Card
+    Button, Card, Col, Empty, Form, Input, InputNumber,
+    Row, Typography
 } from 'antd';
-
-
-import {
-    SearchOutlined
-} from '@ant-design/icons'
-
+import 'antd/dist/antd.css';
+import React, { useContext, useMemo, useReducer } from 'react';
+import { FlexOfferCard } from '../MarketView/flexOffer';
 import { Web3Context } from '../web3State/web3State';
-import {FlexOfferCard} from '../MarketView/flexOffer';
-
-import { BuyViewContext, reducer, initialState } from './buyViewState';
-
-const { Title, Text } = Typography;
+import { BuyViewContext, initialState, reducer } from './buyViewState';
+const { Title, } = Typography;
 
 
 function LookupFlexOffer() {
@@ -52,12 +42,6 @@ function FlexOfferInfo(){
 let BuyInterface = () =>{
     const [offer,setOffer] = useContext(BuyViewContext);
     let [web3state, dispatch] = useContext(Web3Context);
-
-    let lastBidAmount = useMemo(() => {
-        let bids = web3state.allFlexOfferBids[offer.selectedOfferId] ?? [];
-        let lastBid = bids.slice(-1).pop();
-        return lastBid?.amount ?? 0;
-    }, [web3state.allFlexOfferBids[offer.selectedOfferId] ?? []])
 
     let [bidForm] = Form.useForm();
     let [controlForm] = Form.useForm();
@@ -99,10 +83,6 @@ function BuyView() {
     let [web3state, dispatch] = useContext(Web3Context);
     const [offer,offerdispatch] = useReducer(reducer,initialState);
     const setOffer = (type, payload) => {offerdispatch({type:type, payload:payload})};
-
-    let input_row = <Row gutter={16}><Col span={4}>
-            <LookupFlexOffer />    
-        </Col></Row>
 
     return <BuyViewContext.Provider value={[offer, setOffer]}>
         <Row gutter={16}>

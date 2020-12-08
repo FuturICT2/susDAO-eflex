@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useReducer, createContext } from 'react';
+import { createContext } from 'react';
 const initialState = {
     selectedOfferId: "",
     selectedOffer: "",
@@ -19,4 +19,4 @@ function reducer(state,action){
 let BuyViewContext = createContext(null);
 
 
-export { BuyViewContext, reducer, initialState}
+export { BuyViewContext, reducer, initialState };

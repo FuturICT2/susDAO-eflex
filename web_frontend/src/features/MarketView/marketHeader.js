@@ -1,32 +1,9 @@
-import React, { useContext, useMemo } from 'react';
-
-import 'antd/dist/antd.css';
 import {
-    Typography,
-    Card,
-    List,
-    Tag,
-    Statistic,
-    Row,
-    Col,
-    Table,
-    Timeline,
-    Popover,
-    PageHeader
+    PageHeader, Row, Statistic
 } from 'antd';
-
-import {
-    ArrowUpOutlined,
-    CheckCircleOutlined,
-    CheckCircleFilled,
-    CloseCircleOutlined,
-} from '@ant-design/icons'
-
+import 'antd/dist/antd.css';
+import React, { useContext, useMemo } from 'react';
 import { Web3Context } from '../web3State/web3State';
-
-
-const { Title, Text } = Typography;
-const { Countdown } = Statistic;
 
 function MarketHeader(){
     let [web3state, dispatch] = useContext(Web3Context);
@@ -43,7 +20,7 @@ function MarketHeader(){
             <Statistic title="Pool" value={totalGWeiOnContract} suffix="Wei" style={statsty} />
             <Statistic title="Point Price" value={gweiPerToken} suffix="Wei" style={statsty} />
         </Row>
-    }, [web3state.totalPoints, web3state.totalOffers, web3state.totalEth]); // TODO: make more precise
+    }, [web3state.totalPoints, web3state.totalOffers, web3state.totalEth]);
 
 
     return <PageHeader onBack={null} title="Stats" subTitle="Hello">{stats}</PageHeader>

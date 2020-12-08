@@ -1,8 +1,4 @@
-import { createContext, useEffect, useContext } from 'react';
-import Web3 from 'web3';
-import detectEthereumProvider from '@metamask/detect-provider';
-import FlexOffer from '../../artifacts/FlexOffer.json';
-import FlexPoint from '../../artifacts/FlexPoint.json';
+import { createContext } from 'react';
 
 const initialState = {
     offersShown: 18,
@@ -22,4 +18,5 @@ function reducer(state, action) {
 
 const MarketContext = createContext([initialState, (...args) => { }]);
 
-export { MarketContext, initialState, reducer};
+export { MarketContext, initialState, reducer };
+

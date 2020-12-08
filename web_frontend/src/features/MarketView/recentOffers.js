@@ -1,35 +1,11 @@
-import React, { useContext, useMemo } from 'react';
-import moment from 'moment';
-
-import 'antd/dist/antd.css';
 import {
-    Typography,
-    Card,
-    List,
-    Tag,
-    Statistic,
-    Row,
-    Col,
-    Table,
-    Timeline,
-    Popover,
-    PageHeader
+    List
 } from 'antd';
-
-import {
-    ArrowUpOutlined,
-    CheckCircleOutlined,
-    CheckCircleFilled,
-    CloseCircleOutlined,
-} from '@ant-design/icons'
-
+import 'antd/dist/antd.css';
+import React, { useContext, useMemo } from 'react';
 import { Web3Context } from '../web3State/web3State';
-import { MarketContext } from './marketState'
-
 import { FlexOfferCard } from './flexOffer';
-
-const { Title, Text } = Typography;
-const { Countdown } = Statistic;
+import { MarketContext } from './marketState';
 
 
 let OfferItem = ({offer, bids}) => {
