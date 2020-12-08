@@ -57,9 +57,9 @@ class AsyncContract:
                 fun = getattr(self.contract.functions, attrname)
                 nonce = self.w3.eth.getTransactionCount(self.account.address)
                 trans = fun(*args, **kwargs).buildTransaction({
-                    "nonce": nonce
+                    "nonce": nonce,
+                    "from": self.account.address
                     })
-
                 signed_trans = self.account.sign_transaction(trans)
                 trans_hash = self.w3.eth.sendRawTransaction(signed_trans.rawTransaction)
                 # Wait for transaction to complete, return receipt

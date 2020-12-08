@@ -1,6 +1,6 @@
-# Autobidder
+# auto_bidder.py
 
-Creates multiple "autobidders" that randomly generate a maximum price for each FlexOffer put onto the market, and then incrementally offer money for these offers until their max price was reached.
+Creates multiple "autobidders" that randomly generate a maximum price it is willing to pay for each FlexOffer put onto the market, and then incrementally offer money for these offers until their max price was reached.
 
 
 ```
@@ -32,7 +32,7 @@ Prepares global configuration located in `../config` for use, including:
 
 # auto_offerer.py
 
-Generates a new random offer every 2 seconds, based on config provided by `config.py`. Takes the **first** key exposed by `config.py`.
+Generates a new random offer every 2 seconds, based on config provided by `config.py`. Takes the **third** key exposed by `config.py`.
 
 
 # web3_contract.py

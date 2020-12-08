@@ -43,7 +43,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
 
     event flexOfferMinted (uint256 indexed flexOfferId, address indexed og_owner);
 
-    event flexOfferBidSuccess(uint256 indexed flexOfferId, address indexed new_owner);
+    event flexOfferBidSuccess(uint256 indexed flexOfferId, address indexed new_owner, uint bid_amount);
 
     event flexOfferActivation(uint256 indexed flexOfferId,uint256 flexPointCalc, address indexed curr_owner);
 
@@ -126,7 +126,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         payable(ownerOf(flexOfferId)).transfer(flex_offers_mapping[flexOfferId].curr_bid);
         _transfer(ownerOf(flexOfferId), _msgSender(), flexOfferId);
         flex_offers_mapping[flexOfferId].curr_bid = msg.value;
-        emit flexOfferBidSuccess(flexOfferId, _msgSender());
+        emit flexOfferBidSuccess(flexOfferId, _msgSender(), msg.value);
     }
 
     // the activation of the flex offer also burns the flex offer
