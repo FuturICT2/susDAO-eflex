@@ -106,7 +106,7 @@ function OfferView() {
     const getNewOffer = async (flex_token_id)=>{
       let offerinfo = await contract.methods.flex_offers_mapping(flex_token_id).call();
       let status = statusList[0];
-      if (!offerinfo[5]){
+      if (offerinfo[5]>0){
         status = statusList[1];
       }
       if(moment.unix(offerinfo[4]).subtract(tfend*60+offerinfo[2], "seconds") <moment()){
@@ -115,7 +115,9 @@ function OfferView() {
       let bidaddress = 'NA';
       try{
         let result = await contract.methods.ownerOf(flex_token_id).call();
-        if (!offerinfo[5]){bidaddress = result;}
+        if (offerinfo[5]>0){
+          bidaddress = result;
+        }
       }catch(error){
         status = statusList[5];
       }
@@ -179,9 +181,9 @@ function OfferView() {
         if (!error){
           let flex_token_id = result.returnValues[0];
           let index = myOfferRef.current.findIndex(offer => offer.offerId ===flex_token_id);
-          if(index){
+          if(index>-1){
             let newOffers = myOfferRef.current.slice();
-            getNewOffer(web3state.user.address,index).then((offer)=>{
+            getNewOffer(flex_token_id).then((offer)=>{
               newOffers[index] = offer;
               updateOffers(newOffers);
             })

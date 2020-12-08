@@ -42,9 +42,9 @@ function AppHeader() {
           let account = web3state.user.address;
           let nfp = await web3state.fpcontract.methods.balanceOf(account).call();
           let nfo = await web3state.contract.methods.GetMyTotMintedFlexOffers(account).call();
-          dispatch('updateUser',{userFlexPoints: nfp, totalFlexOffers:nfo});
+          dispatch('updateUser',{flexPoints: nfp, totalFlexOffers:nfo});
         }else{
-          dispatch('updateUser',{userFlexPoints: 0, totalFlexOffers:0});
+          dispatch('updateUser',{flexPoints: 0, totalFlexOffers:0});
         }
         // add event to update user flexpoints
         web3state.contract.events.flexOfferActivation(function(error, result){
@@ -53,7 +53,7 @@ function AppHeader() {
             updateRate();
             if(web3state.user?.address){
               web3state.contract.methods.GetMyTotMintedFlexOffers(web3state.user.address).call().then(
-                (newNfp)=>{dispatch('updateUser', {userFlexPoints:newNfp});}
+                (newNfp)=>{dispatch('updateUser', {flexPoints:newNfp});}
               )
             }
           }
@@ -63,7 +63,7 @@ function AppHeader() {
           if (!error){updateRate();}
         });
       }else{
-        dispatch('updateUser',{userFlexPoints: 0, totalFlexOffers:0});
+        dispatch('updateUser',{flexPoints: 0, totalFlexOffers:0});
       }
     },[web3state.user?.address,web3state.contract,web3state.fpcontract]);
 
