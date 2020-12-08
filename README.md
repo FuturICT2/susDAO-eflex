@@ -3,31 +3,19 @@
 ## Setup
 
 First, install dependencies:
-
-#### TODO: Test this
-```bash
-# Setup yarn repo
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-sudo apt update
-
-# Install programs
-sudo apt install yarn python3 nodejs
-# Install truffle
-yarn global add truffle ganache-cli
-
-# Install autobidder deps
-python3 -m pip install -r auto_bidder/requirements.txt
-
-# Install contract deps
-cd main_contract
-yarn install
-cd ..
-
-# Install web_frontend deps
-cd web_frontend
-yarn install
-cd ..
+```sh
+sh setup.sh
 ```
+This will install globally:
+* Python3, in it package "web3"
+* Yarn
+* Ganache-ClI
+* Truffle
+* Node.js
+
+And setup the local dev environments.
+
+
 There are multiple aspects to this project. For one, there's the smart contract itself, but there's also a webpage, run by a node server, and some market participant simulators, written in python.
 
 A makefile is provided to make setup as easy as possible. Apart from the contract deployment command, none of these commands return, so  they have to be run in a different shell instance each:
@@ -36,7 +24,7 @@ A makefile is provided to make setup as easy as possible. Apart from the contrac
     
         make ganache
 
-* Deploy contracts
+* Deploy contracts (**NOTE**: If this fails, try `cd main_contract; truffle compile --all` first)
 
         make setup_contract
 
