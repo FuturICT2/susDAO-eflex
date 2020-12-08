@@ -1,12 +1,13 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import 'antd/dist/antd.css';
-import { 
+import {
     PageHeader,
     Tag,
     Button } from 'antd';
 
 import { Web3Context } from '../web3State/web3State';
+import Web3 from 'web3';
 
 import Blockies from 'react-blockies';
 
@@ -14,6 +15,7 @@ import Blockies from 'react-blockies';
 
 function AppHeader() {
     let [web3state, dispatch] = useContext(Web3Context);
+    let [rate,setRate] = useState(0);
 
     let userAddress = web3state.user?.address || "logged-out";
     let userFlexPoints = web3state.user?.flexPoints || 0;
@@ -26,13 +28,50 @@ function AppHeader() {
 
     let logInOutAction = userIsConnected ? "logout" : "login";
     let logInOutButton = <Button key="0" onClick={() => dispatch(logInOutAction)}>{userIsConnected ? "Log Out" : "Log In"} </Button>
-    
 
-    return <PageHeader 
+    const updateRate = async()=>{
+      let totSupply = await web3state.fpcontract.methods.totalSupply().call();
+      let totWei = await web3state.web3.eth.getBalance(web3state.contract._address);
+      if (totSupply>0){setRate(totWei/totSupply)};
+    }
+
+    useEffect(async ()=>{
+      if(web3state.contract && web3state.fpcontract){
+        updateRate();
+        if (web3state.user?.address){
+          let account = web3state.user.address;
+          let nfp = await web3state.fpcontract.methods.balanceOf(account).call();
+          let nfo = await web3state.contract.methods.GetMyTotMintedFlexOffers(account).call();
+          dispatch('updateUser',{userFlexPoints: nfp, totalFlexOffers:nfo});
+        }else{
+          dispatch('updateUser',{userFlexPoints: 0, totalFlexOffers:0});
+        }
+        // add event to update user flexpoints
+        web3state.contract.events.flexOfferActivation(function(error, result){
+          if (!error){
+            let flex_token_id = result.returnValues[0];
+            updateRate();
+            if(web3state.user?.address){
+              web3state.contract.methods.GetMyTotMintedFlexOffers(web3state.user.address).call().then(
+                (newNfp)=>{dispatch('updateUser', {userFlexPoints:newNfp});}
+              )
+            }
+          }
+        });
+        // bidding success function
+        web3state.contract.events.flexOfferBidSuccess(function(error, result){
+          if (!error){updateRate();}
+        });
+      }else{
+        dispatch('updateUser',{userFlexPoints: 0, totalFlexOffers:0});
+      }
+    },[web3state.user?.address,web3state.contract,web3state.fpcontract]);
+
+    return <PageHeader
         backIcon={ false }
         avatar={ {src: <Blockies seed={userAddress} /> } }
         title={ titleText }
-        subTitle={`${userFlexPoints} Flexpoints, ${userFlexOffers} FlexOffers`}
+        subTitle={`${userFlexPoints} Flexpoints, ${userFlexOffers} FlexOffers, 1 flexpoint = ${rate} wei`}
         tags={onlineTag}
     ></PageHeader>
 
