@@ -78,7 +78,7 @@ let PhaseList = ({offer}) => {
     return <Timeline>{
         [0, 1, 2, 3].map(i => {
             let color = status < i ? "blue" : (status == i ? "green" : "black");
-            let clock = status == i ? <Countdown value={deadline} /> : ""
+            let clock = status == i && i != 3 ? <Countdown value={deadline} /> : ""
             let label = ["Selling", "Pause", "Active", "Expired"][i];
             return <Timeline.Item color={color}>{label}{clock}</Timeline.Item>
         })}
