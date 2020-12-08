@@ -39,7 +39,7 @@ function reducer(state, action) {
                 "0x5": "Goerli",
                 "0x2a": "Kovan"
             }
-            let networkName = networkNames[chainId] || "localhost";
+            let networkName = networkNames[chainId] || "custom";
             return { ...state, chainId: chainId, networkName: networkName }
         },
 
@@ -231,7 +231,7 @@ function Web3Manager() {
 
     const detectProvider = async () => {
         const provider = await detectEthereumProvider();
-        const web3 = new Web3(provider || 'ws://localhost:7545');
+        const web3 = new Web3(provider);
         if (!provider) {
             console.error('Error: Cannot detect ethereum provider');
         } else if (!window.ethereum) {
