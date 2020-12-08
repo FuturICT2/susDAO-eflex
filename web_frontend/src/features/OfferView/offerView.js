@@ -151,14 +151,13 @@ function OfferView() {
         updateOffers([]);
       }
     }
-// console.log(currentOffers);
+
     // listen to events
     const listenEvent =()=>{
       // new flexoffers
       contract.events.flexOfferMinted(function(error, result){
         if (!error){
           let flex_token_id = result.returnValues[0];
-          console.log(web3state.user?.address);
           contract.methods.flex_offers_mapping(flex_token_id).call().then( (offerinfo)=>{
             if (web3state.user.address.toUpperCase()===offerinfo[0].toUpperCase()){
               let newOffers = myOfferRef.current.slice();
@@ -214,7 +213,7 @@ function OfferView() {
           });
         });
     }
-console.log(currentOffers);
+
     // initialization
     useEffect( () => {
       init();
