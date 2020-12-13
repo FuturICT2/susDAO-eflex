@@ -74,7 +74,7 @@ contract FlexOffer is ERC721, ERC721Burnable{
         uint end = flex_offers_mapping[flexOfferId].end_time;
         uint dur = flex_offers_mapping[flexOfferId].duration;
         uint pow = flex_offers_mapping[flexOfferId].power;
-        return ((end-start-dur)/(end-start-dur))*(dur)*(pow);
+        return ((end-start-dur)/(end-start))*(dur)*(pow);
     }
     // include a incrementing counter
     function create_flex_offer_id ( address _address, uint timestamp ) internal pure returns (bytes32){
