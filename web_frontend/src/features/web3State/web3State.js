@@ -8,6 +8,7 @@ import { showError, fail } from '../error/Error';
 
 const initialState = {
     user: undefined,
+    web3: '',
     allFlexOffers: {},
     allFlexOfferBids: {}, // {flexOfferId: [flexOfferBid1, ...]}
     account: '',
@@ -15,8 +16,9 @@ const initialState = {
     netId: 0,
     networkName: null,
     contract: '',
-    connected: false, // true as soon as app connected with metamask
-    isLoaded: false, // true as soon as all fields had at least one update from blockchain
+    fpcontract: '',
+    connected: false,
+    isLoaded: false,
     totalOffers: -1,
     totalPoints: -1,
     currentBlockNumber: 0,
@@ -29,10 +31,12 @@ function reducer(state, action) {
         update: (update) => {
             return { ...state, ...update };
         },
-
         updateUser: (update) => {
             /* Updates only the "user" field */
             return {...state, user: {...state.user, ...update}};
+        },
+        updateWeb3:(web3)=>{
+          return {...state, web3:web3}
         },
         setChainId: (chainId) => {
             let networkNames = {
@@ -92,6 +96,9 @@ function reducer(state, action) {
 
         setContract:  (contract)=>{
           return { ...state, contract: contract }
+        },
+        setFpContract:  (contract)=>{
+          return { ...state, fpcontract: contract }
         }
     }
     console.log("Web3State || Action emitted: ", action.type);
@@ -204,6 +211,14 @@ function Web3Manager() {
         updateLoop();
 
         dispatch('setChainId', chainId);
+        // (state, action) => state
+        dispatch('updateWeb3',web3);
+        if(accountAddress && flexOffer){
+          flexOffer.methods.FP().call().then((fpAddress)=>{
+            let fpContract = new web3.eth.Contract(FlexPointABI.abi, fpAddress);
+            dispatch('setFpContract',fpContract);
+          });
+        }
         var eventCallbacks = {
             accountsChanged: (accounts) => {
                 dispatch('updateUser', {address: accounts[0]});

@@ -4,7 +4,6 @@ import './washing.css';
 
 const initialState = {
   door: false,
-  chamber: false,
   shirt: false,
   jeans: false,
   hoodie: false,
@@ -13,9 +12,6 @@ function reducer(state,action){
   let reducers = {
     setDoor: (open)=>{
       return {...state, door: open}
-    },
-    setChamber: (run)=>{
-      return {...state, chamber: run}
     },
     setShirt: (inChamber)=>{
       return {...state, shirt: inChamber}
@@ -39,7 +35,7 @@ function WashMachine() {
   const [machine,dispatchM] = useReducer(reducer,initialState);
   const setMachine = (type, payload) => {dispatchM({type:type, payload:payload})};
   const door=()=>{
-    if (!machine.chamber){
+    if (!(web3state.user?.machineOn)){
       setMachine('setDoor',!machine.door);
     }
   }
@@ -60,39 +56,44 @@ function WashMachine() {
   }
 
   const start=()=>{
-    if (!machine.door && !machine.chamber){
-      setMachine('setChamber', true);
+    if (!machine.door && !(web3state.user?.machineOn) ){
+      dispatch('updateUser', {machineOn:true});
+      // setMachine('setChamber', true);
     }
   }
 
   const stop=()=>{
-    if (machine.chamber){
-      setMachine('setChamber', false);
+    if ((web3state.user?.machineOn)){
+      dispatch('updateUser', {machineOn:false});
+      // setMachine('setChamber', false);
     }
   }
 
-  useEffect(() => {
-    if(loggedin){
-      const account = web3state.user.address;
-      contract.events.flexOfferActivation(
-        function(error, result){
-          const offerId = result.returnValues[0];
-          contract.methods.flex_offers_mapping(offerId).call().then((offerInfo)=>{
-            if(offerInfo[0].toUpperCase()===web3state.user.address.toUpperCase()){
-              setMachine('setChamber', true);
-              setTimeout(()=>{setMachine('setChamber', false)}, offerInfo[2]/1000);
-            }
-          });
-        }
-      )
-    }
-  }, [web3state.user, web3state.contract]);
+  // useEffect(() => {
+  //   if(loggedin){
+  //     const account = web3state.user.address;
+  //     contract.events.flexOfferActivation(
+  //       function(error, result){
+  //         const offerId = result.returnValues[0];
+  //         contract.methods.flex_offers_mapping(offerId).call().then((offerInfo)=>{
+  //           console.log(offerInfo);
+  //           if(offerInfo[0].toUpperCase()===web3state.user.address.toUpperCase()){
+  //             dispatch('updateUser', {machineOn:true});
+  //             setTimeout( ()=>{dispatch('updateUser', {machineOn:false})}, offerInfo[2]*1000);
+  //             // setMachine('setChamber', true);
+  //             // setTimeout(()=>{setMachine('setChamber', false)}, offerInfo[2]*1000);
+  //           }
+  //         });
+  //       }
+  //     )
+  //   }
+  // }, [web3state.user?.address, web3state.contract]);
 
   if(loggedin){
   return (<div className="wrapper laundromat">
   <div id="machine">
     <div className={machine.door ? "door open" : "door"} onClick = {door}></div>
-    <div className={machine.chamber ? "chamber spin":"chamber"}>
+    <div className={(web3state.user?.machineOn) ? "chamber spin":"chamber"}>
       <div className="water">
         <div className="crescent"></div>
       </div>
@@ -104,7 +105,7 @@ function WashMachine() {
       <button id="start" onClick={start}>▶</button>
       <button id="stop" onClick={stop}>◼</button>
       <button id="open" onClick={door}>Door</button>
-      <section className={machine.chamber ? "display on":"display"}><span>{machine.chamber ? "Running":"Off"}</span></section>
+      <section className={(web3state.user?.machineOn) ? "display on":"display"}><span>{(web3state.user?.machineOn) ? "Running":"Off"}</span></section>
     </div>
   </div>
   <div className="clothing shirt" style={machine.shirt ? {visibility: "hidden"}:{}} onClick = {shirt}></div>
