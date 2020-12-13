@@ -75,7 +75,7 @@ function reducer(state,action){
   return reducer(action.payload);
 }
 
-const statusList = ['wait for bidding','in bidding','to be activated',
+const statusList = ['wait for bid','bidding','to be activated',
                     'manually activated','running','accomplished'];
 const renStatus = statusList.map((x)=>{return {text:x , value:x } } );
 const timeFormat = "YYYY-MM-DD HH:mm";
@@ -210,7 +210,7 @@ function OfferView() {
                 newOffers[index].status = statusList[5];
                 newOffers[index].activateTime = '';
                 updateOffers(newOffers);
-              }, offerInfo[2]*200);
+              }, offerInfo[2]*1000);
             }
           });
         });
