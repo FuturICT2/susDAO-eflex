@@ -86,7 +86,7 @@ function reducer(state, action) {
                 }
             }
 
-            
+
         },
         removeFlexOffer: (flexOfferId) => {
             let flexOffersCopy = state.allFlexOffers;
@@ -111,7 +111,7 @@ function Web3Manager() {
     const initProvider = async (provider, web3) => {
         let chainId = provider.chainId;
         let accountAddress = (await provider.request({ method: 'eth_requestAccounts' }))[0];
-        let netId = await provider.request({ method: 'net_version' });  
+        let netId = await provider.request({ method: 'net_version' });
         // Setup contract
         let contractDeploymentInfo = FlexOfferABI.networks[netId];
         // Check if contract was deployed
@@ -126,7 +126,7 @@ function Web3Manager() {
         } else {
             raiseContractNotDeployed();
         }
-        
+
         // Make example  call to check if config file is up-to-date:
         await flexOffer.methods.FP().call((error, res) => {
             if(error){
@@ -142,7 +142,7 @@ function Web3Manager() {
             },
             connected: provider.isConnected()
         });
-        
+
         let getFlexOfferData = async (flexOfferId) => {
             return flexOffer.methods.flex_offers_mapping(flexOfferId).call();
         }
@@ -170,7 +170,7 @@ function Web3Manager() {
         // Update state from time to time
         let lastBlockNumber = await web3.eth.getBlockNumber() - 100;
 
-        
+
         let updateLoop = async () => {
             // Sleep function taken from SO
             function sleep(ms) {
@@ -182,14 +182,14 @@ function Web3Manager() {
                 // Fetch all events since last update
                 let newEvents = lastBlockNumber == currentBlockNumber ? [] : await flexOffer.getPastEvents("allEvents", {fromBlock: lastBlockNumber});
                 // Update block number
-                lastBlockNumber = currentBlockNumber 
+                lastBlockNumber = currentBlockNumber
                 // Dispatch all event callbacks
                 let futures = newEvents.map(event => {
                     console.log("Dispatching event call back for event: ", event.event);
                     let callback = contractEventCallbacks[event.event] ?? (async () => {});
                     return callback(event);
                 });
-                
+
                 // Update all statistic fields
                 dispatch("update", {
                     isLoaded: true,
@@ -202,7 +202,7 @@ function Web3Manager() {
 
                 // Await all event callbacks
                 await Promise.all(futures);
-                
+
                 await sleep(1000);
             }
         };
