@@ -19,7 +19,7 @@ let { Text, Paragraph } = Typography;
 
 function AppHeader() {
     let [web3state, dispatch] = useContext(Web3Context);
-    
+
     // Keys Modal
     let [isKeysModalVisible, setKeysModalVisible] = useState(false);
     let showKeysModal = () => setKeysModalVisible(true);
@@ -32,17 +32,17 @@ function AppHeader() {
                 <Text strong>{pub} </Text>
                 <Text mark>{notes[i]}</Text>
                 </>
-        
+
         let text = <Paragraph copyable>{priv}</Paragraph>
         return  <List.Item>
                     <List.Item.Meta
                         title={title}
                         description={text}/>
                 </List.Item>
-        
+
     };;
-    
-    let keysModal =< Modal 
+
+    let keysModal =< Modal
         visible={isKeysModalVisible}
         onOk={closeKeysModal}
         onCancel={closeKeysModal}
@@ -70,7 +70,7 @@ function AppHeader() {
     const updateRate = async()=>{
       let totSupply = await web3state.fpcontract.methods.totalSupply().call();
       let totWei = await web3state.web3.eth.getBalance(web3state.contract._address);
-      if (totSupply>0){setRate(totWei/totSupply)};
+      if (totSupply>0){setRate(Math.floor(totWei/totSupply))};
     }
 
     useEffect(async ()=>{
@@ -112,10 +112,10 @@ function AppHeader() {
         subTitle={`${userFlexPoints} Flexpoints, ${userFlexOffers} FlexOffers, 1 flexpoint = ${rate} wei`}
         tags={onlineTag}
         extra={<Button type="dashed" onClick={showKeysModal}>Show Keys</Button>}>
-        
+
     </PageHeader>
 
-  
+
 
     return <><Header />{keysModal}</>
 
