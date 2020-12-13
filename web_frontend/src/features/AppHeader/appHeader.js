@@ -25,7 +25,7 @@ function AppHeader() {
     let showKeysModal = () => setKeysModalVisible(true);
     let closeKeysModal = () => setKeysModalVisible(false);
 
-    let keysData = Object.entries(Keys.private_keys);
+    let keysData = Object.entries(Keys.private_keys ?? {});
     let notes = {1: "(used by Autobidder)", 2: "(used by Autoofferer)"}
     let renderKey = ([pub, priv], i) => {
         let title =<>
