@@ -4,6 +4,8 @@ import detectEthereumProvider from '@metamask/detect-provider';
 import FlexOfferABI from '../../artifacts/FlexOffer.json';
 import FlexPointABI from '../../artifacts/FlexPoint.json';
 
+import { showError, fail } from '../error/Error';
+
 const initialState = {
     user: undefined,
     web3: '',
@@ -16,6 +18,7 @@ const initialState = {
     contract: '',
     fpcontract: '',
     connected: false,
+    isLoaded: false,
     totalOffers: -1,
     totalPoints: -1,
     currentBlockNumber: 0,
@@ -113,8 +116,8 @@ function Web3Manager() {
         let contractDeploymentInfo = FlexOfferABI.networks[netId];
         // Check if contract was deployed
         let raiseContractNotDeployed = () =>{
-            throw Error("Contract not deployed");
-        }
+            fail("Unable to connect to contract.", "Contract deployed?");
+        } 
         let flexOffer = undefined;
 
         // Check if config file exists
@@ -189,6 +192,7 @@ function Web3Manager() {
 
                 // Update all statistic fields
                 dispatch("update", {
+                    isLoaded: true,
                     totalOffers: (await flexOffer.methods.totalSupply().call()),
                     totalPoints: (await flexPoints.methods.totalSupply().call()),
                     totalEth: (await web3.eth.getBalance(flexOffer.options.address)),
@@ -245,9 +249,10 @@ function Web3Manager() {
     }
 
     const detectProvider = async () => {
-        const provider = await detectEthereumProvider();
+        const provider = await detectEthereumProvider({silent: true});            
         const web3 = new Web3(provider);
         if (!provider) {
+            showError("Can't detect ethereum provider.", "Wallet enabled?");
             console.error('Error: Cannot detect ethereum provider');
         } else if (!window.ethereum) {
             console.error('Error: Cannot detect ethereum provider');
