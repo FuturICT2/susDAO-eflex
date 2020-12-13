@@ -7,7 +7,9 @@ import React, { useContext, useMemo, useReducer } from 'react';
 import { FlexOfferCard } from '../MarketView/flexOffer';
 import { Web3Context } from '../web3State/web3State';
 import { BuyViewContext, initialState, reducer } from './buyViewState';
+import { showAndThrowFlexOfferError } from '../error/Error';
 const { Title, } = Typography;
+
 
 
 function LookupFlexOffer() {
@@ -48,11 +50,12 @@ let BuyInterface = () =>{
     
     let onBidFinish = _ =>{
         let call = web3state.contract.methods.BidForFlexOffer(offer.selectedOfferId);
-        console.log(web3state.user)
-        call.send({
+        let sendPromise = call.send({
             value: offer.bidAmount,
             from: web3state.user.address
         });
+
+        sendPromise.on('error', showAndThrowFlexOfferError);
     }
 
     let onMachineTurnOn = _ => {
