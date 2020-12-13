@@ -39,10 +39,10 @@ function App() {
       <img src="logo.png" className="logo" alt="eflex-logo" />
       <Menu theme="dark" defaultSelectedKeys={["3"]} mode="inline">
         <Menu.Item key="1" icon={<BorderOuterOutlined />} onClick={()=>setView("buy")}>
-          Buyer
+          Buy
         </Menu.Item>
         <Menu.Item key="2" icon={<BulbOutlined />} onClick={() => setView("offer")}>
-          Seller
+          Offer
         </Menu.Item>
         <Menu.Item key="3" icon={<StockOutlined />} onClick={() => setView("market")}>
           View Market
