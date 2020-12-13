@@ -1,5 +1,5 @@
 import {
-    List
+    List, Card
 } from 'antd';
 import 'antd/dist/antd.css';
 import React, { useContext, useMemo } from 'react';
@@ -28,14 +28,27 @@ let RecentOffers = () =>{
         }
         return data;
     }, [web3state.allFlexOffers, marketState.offersShown])
-    return <List 
-        grid={{
-            gutter: 32,
-            column: 3
-        }}
+
+    let grid = {
+        gutter: 32,
+        xs: 1,
+        sm: 1,
+        md: 1,
+        lg: 2,
+        xl: 2,
+        xxl: 3
+    }
+    let loadingList = <List
+        grid={grid}
+        dataSource={[1, 2, 3]}
+        renderItem={(i) => <List.Item key={i} ><Card loading={true} ></Card></List.Item>} />
+    
+    let loadedList = <List 
+        grid={grid}
         dataSource={flexOffersPerpared}
         renderItem={(offer) => <OfferItem offer={offer} bids={web3state.allFlexOfferBids[offer.id]}/>}
     />
+    return web3state.isLoaded ? loadedList : loadingList;
 }
 
 

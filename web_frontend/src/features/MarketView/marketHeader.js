@@ -12,18 +12,18 @@ function MarketHeader(){
         let totalFlexOffers = web3state.totalOffers;
         let totalGWeiOnContract = web3state.totalEth;
         let gweiPerToken = totalFlexTokens > 0 ? Math.floor(totalGWeiOnContract / totalFlexTokens) : 0;
-
-        let statsty = {margin: '0 32px'}
+        
+        let MarketStat = (props) => <Statistic {...props} loading={!(web3state.isLoaded)} style={{margin: '0 32px'}} />
         return <Row>
-            <Statistic title="Offers" value={totalFlexOffers} style={statsty} />
-            <Statistic title="Points" value={totalFlexTokens} style={statsty} />
-            <Statistic title="Pool" value={totalGWeiOnContract} suffix="Wei" style={statsty} />
-            <Statistic title="Point Price" value={gweiPerToken} suffix="Wei" style={statsty} />
+            <MarketStat title="Offers" value={totalFlexOffers} />
+            <MarketStat title="Points" value={totalFlexTokens} />
+            <MarketStat title="Pool" value={totalGWeiOnContract} suffix="Wei" />
+            <MarketStat title="Point Price" value={gweiPerToken} suffix="Wei" />
         </Row>
     }, [web3state.totalPoints, web3state.totalOffers, web3state.totalEth]);
 
-
-    return <PageHeader onBack={null} title="Stats" subTitle="Hello">{stats}</PageHeader>
+    return stats;
+    //return <PageHeader onBack={null} title="Stats">{stats}</PageHeader>
    
 }
 

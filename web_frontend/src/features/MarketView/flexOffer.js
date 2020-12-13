@@ -17,14 +17,14 @@ const {Text } = Typography;
 const { Countdown } = Statistic;
 
 
-let BidList = ({data})=>{
+let BidList = ({data, flexOfferId = null})=>{
     let [marketState, marketDispatch] = useContext(MarketContext);
     let bids = data ?? [];
     bids = bids.map((bid) => {
         return {
             ...bid,
             author_short: bid.author.slice(0,4) + ".." + bid.author.slice(-2),
-            key: bid.author + "__" + String(bid.amount)
+            key: bid.author + "__" + String(bid.amount) + flexOfferId
         }
     });
     bids.sort((lbid, rbid) => +(rbid.amount)- +(lbid.amount));
@@ -33,7 +33,7 @@ let BidList = ({data})=>{
         <p>Bids</p>{
         bids.map((bid, i)=>{
             let tag = <Tag color = {i==0?'green' : 'red'} style={{marginBottom: 10}}>{bid.amount}</Tag>
-            return <Popover content={<><Text strong>Source:</Text><Text>{bid.author}</Text></>} >{tag}</Popover>
+            return <Popover id={bid.key} content={<><Text strong>Source:</Text><Text>{bid.author}</Text></>} >{tag}</Popover>
         })
     }</>
 }
@@ -62,7 +62,7 @@ let PhaseList = ({offer}) => {
             let color = status < i ? "blue" : (status == i ? "green" : "black");
             let clock = status == i && i != 3 ? <Countdown value={deadline} /> : ""
             let label = ["Selling", "Pause", "Active", "Expired"][i];
-            return <Timeline.Item color={color}>{label}{clock}</Timeline.Item>
+            return <Timeline.Item color={color} key={offer.id + "_" + label}>{label}{clock}</Timeline.Item>
         })}
     </Timeline>
 }
@@ -74,13 +74,13 @@ let FlexOfferCard = ({offer, bids}) => {
                     <Col span={8}><Text strong>OfferID: </Text>#{offer.id}</Col>
                     <Col span={8} ><Popover content={owner}><Text strong>Author:</Text> {owner_short}</Popover></Col>
                 </Row>
-    return <Card title={title}>
+    return <Card title={title} >
                 <Row gutter={16}>
                     <Col span={12}>
                         <PhaseList offer={offer}/>
                     </Col>
                     <Col span={12}>
-                        <BidList data={bids} />
+                        <BidList data={bids} flexOfferId={offer.id}/>
                     </Col>
                 </Row>
             </Card>
