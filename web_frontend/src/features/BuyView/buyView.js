@@ -77,7 +77,7 @@ let BuyInterface = () =>{
             <Form form={controlForm} onFinish={onMachineTurnOn}>
                 <Title level={5}>Turn on machine:</Title>
                 <Form.Item >
-                    <Button type="primary">Turn On</Button>
+                    <Button type="primary" htmlType="submit" onClick={()=>onMachineTurnOn()}>Turn On</Button>
                 </Form.Item>
             </Form></>
 }
