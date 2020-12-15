@@ -1,4 +1,24 @@
-# susDAO-eflex
+![flexwise](web_frontend/public/logo.png)
+
+Flexwise is a prototype of a decentralized marketplace selling electric power demand flexibility, exploring the possibility of decentralized demand side power management. 
+
+Read the [report](report.pdf) or try out the live demonstration at:
+
+> flexwise.sgyger.com
+
+Parts of the DApp run on Ethereum and hence require a crypto wallet like [Metamask](https://metamask.io/) to run properly. The associated contracts are currently only deployed on a private blockchain. Use the following RPC credentials to gain access to it:
+
+* **RPC-URL**  http://ganache.sgyger.com/
+* **Port**  80
+* **Chain ID**  5777
+
+Some functions can only be executed with Ethereum; press "Show Keys" at the top right to get a list of private keys that have Ethereum associated with them. Or use one of these:
+
+* 41219e3efe938f4b1b5bd68389705be763821460b940d5e2bd221f66f40028d3
+* 76db32cb46895cdb4473c86b4468dbd45f46c1b3d7972002c72bea74efff18ef
+* df207d299d941818bb4f7822cf003662370a7d685016dfc3f1e2cac03d47fc1d
+
+
 
 ## Setup
 
@@ -24,7 +44,7 @@ A makefile is provided to make setup as easy as possible. Apart from the contrac
     
         make ganache
 
-* Deploy contracts (**NOTE**: If this fails, try `cd main_contract; truffle compile --all` first)
+* Deploy contracts
 
         make setup_contract
 
@@ -40,14 +60,10 @@ A makefile is provided to make setup as easy as possible. Apart from the contrac
 
         make web_frontend
 
-The web frontend should open a browser window automatically once ready.
+The web frontend should open automatically once ready, otherwise it can be reached through `localhost:3000`.
 
+To get access to an account that has some ethereum associated with it, ganache generates some and puts their respective keys into `config/keys.json`. They can also be accessed from the web GUI as explained above. 
 
-### Using the web frontend
-
-To use the app, you must connect to the [Metamask](https://metamask.io/) extension. 
-
-Some of the actions require an account containing Ethereum. The makefile is setup such that ganache generates a set of accounts with 100 ETH each, and stores them in the file `config/keys.json`. To avoid taking on the same identity as some of the simulated market participants, only the first account given by this file should be taken on with Metamask.
 
 
 ## Token Design and implementation

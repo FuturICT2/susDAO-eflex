@@ -21,7 +21,7 @@ web_frontend: .FORCE
 
 # Launches ganache in accordance to config/GanacheNetwork.json configuration
 ganache: .FORCE 
-	ganache-cli --account_keys_path config/keys.json --port 8545 --networkId 5777 --host 0.0.0.0  --seed 0
+	ganache-cli --account_keys_path config/keys.json --port 8545 --networkId 5777 --seed 0
 
 # Launches ganache exposed to outside world
 ganache-exposed: .FORCE
