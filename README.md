@@ -4,7 +4,7 @@ Flexwise is a prototype of a decentralized marketplace selling electric power de
 
 Read the [report](report.pdf) or try out the live demonstration at:
 
-> flexwise.sgyger.com
+> [flexwise.sgyger.com](http://flexwise.sgyger.com/)
 
 Parts of the DApp run on Ethereum and hence require a crypto wallet like [Metamask](https://metamask.io/) to run properly. The associated contracts are currently only deployed on a private blockchain. Use the following RPC credentials to gain access to it:
 
